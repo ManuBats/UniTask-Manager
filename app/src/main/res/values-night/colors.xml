@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_light">#FF1E1B2E</color>
+    <color name="card_white">#FF2D2844</color>
+    <color name="text_primary">#FFF1F0F7</color>
+    <color name="text_secondary">#FFA5A0B5</color>
+    <color name="priority_high_bg">#FF4A1A1A</color>
+    <color name="priority_medium_bg">#FF4A3A0A</color>
+    <color name="priority_low_bg">#FF0A3A1A</color>
+    <color name="summary_completed_bg">#FF0A3A1A</color>
+    <color name="summary_pending_bg">#FF4A3A0A</color>
+</resources>

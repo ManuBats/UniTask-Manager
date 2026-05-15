@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">UniTask-Manager</string>
+
+    <!-- Dashboard -->
+    <string name="greeting">¡Hola, Usuario! 👋</string>
+    <string name="section_high_priority">Prioridad Alta</string>
+    <string name="section_upcoming">Próximas Actividades</string>
+    <string name="section_summary">Resumen</string>
+    <string name="btn_see_all">Ver todas</string>
+    <string name="label_urgent">Urgente</string>
+    <string name="label_completed">Completadas</string>
+    <string name="label_pending">Pendientes</string>
+    <string name="label_today">Hoy</string>
+    <string name="label_tomorrow">Mañana</string>
+    <string name="content_description_notifications">Notificaciones</string>
+    <string name="content_description_add">Agregar actividad</string>
+    <string name="content_description_urgent">Urgente</string>
+    <string name="content_description_completed">Completadas</string>
+    <string name="content_description_pending">Pendientes</string>
 </resources>

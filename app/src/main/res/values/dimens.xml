@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- General spacing -->
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">12dp</dimen>
+    <dimen name="spacing_lg">16dp</dimen>
+    <dimen name="spacing_xl">24dp</dimen>
+    <dimen name="spacing_xxl">32dp</dimen>
+
+    <!-- Card radius -->
+    <dimen name="card_radius_sm">8dp</dimen>
+    <dimen name="card_radius_md">12dp</dimen>
+    <dimen name="card_radius_lg">16dp</dimen>
+    <dimen name="card_radius_xl">24dp</dimen>
+
+    <!-- Header -->
+    <dimen name="header_padding">24dp</dimen>
+    <dimen name="header_bottom_padding">32dp</dimen>
+    <dimen name="header_icon_size">40dp</dimen>
+    <dimen name="header_greeting_size">24sp</dimen>
+    <dimen name="header_date_size">14sp</dimen>
+
+    <!-- Section title -->
+    <dimen name="section_title_size">18sp</dimen>
+    <dimen name="section_subtitle_size">14sp</dimen>
+
+    <!-- Icon sizes -->
+    <dimen name="icon_sm">20dp</dimen>
+    <dimen name="icon_md">24dp</dimen>
+    <dimen name="icon_lg">32dp</dimen>
+
+    <!-- Summary -->
+    <dimen name="summary_count_size">28sp</dimen>
+    <dimen name="summary_label_size">13sp</dimen>
+
+    <!-- FAB -->
+    <dimen name="fab_margin">16dp</dimen>
+
+    <!-- Elevation -->
+    <dimen name="elevation_sm">1dp</dimen>
+    <dimen name="elevation_md">2dp</dimen>
+    <dimen name="elevation_lg">4dp</dimen>
+</resources>

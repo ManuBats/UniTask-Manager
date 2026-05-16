@@ -17,7 +17,7 @@
         android:icon="@drawable/ic_stats"
         android:title="Estadísticas" />
     <item
-        android:id="@+id/nav_ajustes"
-        android:icon="@drawable/ic_settings"
-        android:title="Ajustes" />
+        android:id="@+id/nav_add_task"
+        android:icon="@drawable/ic_add"
+        android:title="Nueva" />
 </menu>

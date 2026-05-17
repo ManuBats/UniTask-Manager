@@ -1,5 +1,6 @@
 package com.example.unitask_manager.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -36,7 +37,9 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-        btnIrRegistro.setOnClickListener(v ->
-                Toast.makeText(this, "Ir a registro — Pendiente", Toast.LENGTH_SHORT).show());
+        btnIrRegistro.setOnClickListener(v -> {
+            Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
+            startActivity(intent);
+        });
     }
 }

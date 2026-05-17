@@ -132,7 +132,7 @@
                         android:layout_height="20dp"
                         android:src="@drawable/ic_tarea"
                         android:contentDescription="Tareas"
-                        android:tint="@color/primary_purple" />
+                        app:tint="@color/primary_purple" />
 
                     <TextView
                         android:layout_width="wrap_content"

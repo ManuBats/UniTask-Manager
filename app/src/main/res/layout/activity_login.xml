@@ -61,7 +61,7 @@
                 android:layout_marginTop="12dp"
                 android:hint="Contraseña"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                app:passwordToggleEnabled="true">
+                app:endIconMode="password_toggle">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_login_contrasena"

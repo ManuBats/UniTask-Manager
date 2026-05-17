@@ -10,6 +10,7 @@ public class Curso {
     private String horario;
     private int progreso;
     private String descripcion;
+    private int iconResId;
 
     public Curso() {}
 
@@ -68,4 +69,7 @@ public class Curso {
 
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+
+    public int getIconResId() { return iconResId; }
+    public void setIconResId(int iconResId) { this.iconResId = iconResId; }
 }

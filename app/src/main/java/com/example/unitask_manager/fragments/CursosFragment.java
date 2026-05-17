@@ -63,6 +63,7 @@ public class CursosFragment extends Fragment {
             args.putString("curso_horario", curso.getHorario());
             args.putInt("curso_progreso", curso.getProgreso());
             args.putString("curso_descripcion", curso.getDescripcion());
+            args.putInt("curso_icon", curso.getIconResId());
             DetalleCursoFragment detalle = new DetalleCursoFragment();
             detalle.setArguments(args);
             if (getActivity() instanceof MainActivity) {
@@ -85,11 +86,21 @@ public class CursosFragment extends Fragment {
     }
 
     private void cargarDatosEjemplo() {
-        listaCursos.add(new Curso(1, "Programación II", "Ing. López", "#7C3AED", 4, "Lun y Mié 10:00-12:00", 45, "Programación orientada a objetos en Java. Se cubren herencia, polimorfismo, interfaces y manejo de excepciones."));
-        listaCursos.add(new Curso(2, "Cálculo Diferencial", "Ing. Martínez", "#3B82F6", 2, "Mar y Jue 08:00-10:00", 60, "Estudio de límites, derivadas y sus aplicaciones en problemas de ingeniería."));
-        listaCursos.add(new Curso(3, "Física Mecánica", "Ing. García", "#10B981", 3, "Lun y Mié 14:00-16:00", 30, "Principios de mecánica clásica: cinemática, dinámica, trabajo y energía."));
-        listaCursos.add(new Curso(4, "Base de Datos", "Ing. Rodríguez", "#F59E0B", 5, "Mar y Jue 14:00-16:00", 20, "Diseño de bases de datos relacionales, modelado ER, SQL y normalización."));
-        listaCursos.add(new Curso(5, "Inglés Técnico", "Lic. Hernández", "#EC4899", 1, "Vie 10:00-12:00", 70, "Vocabulario técnico para ingeniería, redacción de informes y presentaciones."));
+        Curso c1 = new Curso(1, "Programación II", "Ing. López", "#7C3AED", 4, "Lun y Mié 10:00-12:00", 45, "Programación orientada a objetos en Java. Se cubren herencia, polimorfismo, interfaces y manejo de excepciones.");
+        c1.setIconResId(R.drawable.ic_tarea);
+        listaCursos.add(c1);
+        Curso c2 = new Curso(2, "Cálculo Diferencial", "Ing. Martínez", "#3B82F6", 2, "Mar y Jue 08:00-10:00", 60, "Estudio de límites, derivadas y sus aplicaciones en problemas de ingeniería.");
+        c2.setIconResId(R.drawable.ic_stats);
+        listaCursos.add(c2);
+        Curso c3 = new Curso(3, "Física Mecánica", "Ing. García", "#10B981", 3, "Lun y Mié 14:00-16:00", 30, "Principios de mecánica clásica: cinemática, dinámica, trabajo y energía.");
+        c3.setIconResId(R.drawable.ic_urgent);
+        listaCursos.add(c3);
+        Curso c4 = new Curso(4, "Base de Datos", "Ing. Rodríguez", "#F59E0B", 5, "Mar y Jue 14:00-16:00", 20, "Diseño de bases de datos relacionales, modelado ER, SQL y normalización.");
+        c4.setIconResId(R.drawable.ic_agenda);
+        listaCursos.add(c4);
+        Curso c5 = new Curso(5, "Inglés Técnico", "Lic. Hernández", "#EC4899", 1, "Vie 10:00-12:00", 70, "Vocabulario técnico para ingeniería, redacción de informes y presentaciones.");
+        c5.setIconResId(R.drawable.ic_exposicion);
+        listaCursos.add(c5);
         nextId = 6;
         adapter.notifyDataSetChanged();
         actualizarEmptyState();

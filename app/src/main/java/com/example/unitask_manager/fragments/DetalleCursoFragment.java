@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,6 +28,7 @@ public class DetalleCursoFragment extends Fragment {
 
     private TextView tvNombre, tvProfesor, tvPendientes;
     private TextView tvHorario, tvProgresoTexto, tvDescripcion;
+    private ImageView ivIcono;
     private ProgressBar progressBar;
     private View viewColor;
     private View btnDelete, btnBack;
@@ -55,6 +57,7 @@ public class DetalleCursoFragment extends Fragment {
         tvProgresoTexto = view.findViewById(R.id.tv_detalle_progreso_texto);
         progressBar = view.findViewById(R.id.progress_detalle_curso);
         tvDescripcion = view.findViewById(R.id.tv_detalle_descripcion);
+        ivIcono = view.findViewById(R.id.iv_detalle_icono);
         viewColor = view.findViewById(R.id.view_header_color);
         btnDelete = view.findViewById(R.id.btn_delete_curso_detail);
         btnBack = view.findViewById(R.id.btn_back_curso);
@@ -94,6 +97,11 @@ public class DetalleCursoFragment extends Fragment {
                 tvDescripcion.setVisibility(View.VISIBLE);
             } else {
                 tvDescripcion.setVisibility(View.GONE);
+            }
+
+            int iconResId = args.getInt("curso_icon", 0);
+            if (iconResId != 0) {
+                ivIcono.setImageResource(iconResId);
             }
 
             try {

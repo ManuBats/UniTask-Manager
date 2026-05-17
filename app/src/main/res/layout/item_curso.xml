@@ -5,14 +5,11 @@
     android:id="@+id/card_curso_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="2dp"
+    android:layout_marginBottom="10dp"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="1dp"
     app:cardBackgroundColor="@color/card_white"
-    app:strokeWidth="0dp"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?attr/selectableItemBackground">
+    app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -23,10 +20,11 @@
 
         <View
             android:id="@+id/view_color_bar"
-            android:layout_width="5dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="14dp"
-            android:background="@color/primary_purple" />
+            android:layout_width="4dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="12dp"
+            android:background="@color/primary_purple"
+            android:layerType="software" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -39,44 +37,37 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/text_primary"
-                android:textSize="17sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end" />
 
             <TextView
-                android:id="@+id/tv_curso_horario"
+                android:id="@+id/tv_curso_profesor"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp"
-                android:layout_marginTop="2dp"
                 android:maxLines="1"
                 android:ellipsize="end" />
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="6dp">
-
-                <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:src="@drawable/ic_pending"
-                    android:contentDescription="Pendientes"
-                    app:tint="@color/summary_pending" />
-
-                <TextView
-                    android:id="@+id/tv_curso_pendientes"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="13sp"
-                    android:layout_marginStart="4dp" />
-            </LinearLayout>
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_curso_actividades_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:layout_marginEnd="12dp" />
+
+        <ImageView
+            android:id="@+id/iv_curso_eliminar"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_delete"
+            android:padding="6dp"
+            android:contentDescription="Eliminar curso"
+            android:background="?attr/selectableItemBackgroundBorderless" />
 
     </LinearLayout>
 

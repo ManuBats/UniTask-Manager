@@ -7,7 +7,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.unitask_manager.R;
@@ -17,6 +17,7 @@ public class AgendaFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_placeholder, container, false);
+        view.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.bg_light));
         Toast.makeText(getContext(), "Agenda — En construcción", Toast.LENGTH_SHORT).show();
         return view;
     }

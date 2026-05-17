@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void cargarFragmento(Fragment fragmento, boolean agregarBackStack) {
+    public void cargarFragmento(Fragment fragmento, boolean agregarBackStack) {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.fragment_container, fragmento);
         if (agregarBackStack) {

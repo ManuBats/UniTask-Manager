@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.example.unitask_manager.R;
+import com.example.unitask_manager.fragments.AddTaskFragment;
 import com.example.unitask_manager.fragments.AgendaFragment;
 import com.example.unitask_manager.fragments.AjustesFragment;
 import com.example.unitask_manager.fragments.CursosFragment;
@@ -62,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
                 fragmento = new CursosFragment();
             } else if (id == R.id.nav_agenda) {
                 fragmento = new AgendaFragment();
+            } else if (id == R.id.nav_add_task) {
+                fragmento = new AddTaskFragment();
             } else if (id == R.id.nav_estadisticas) {
                 fragmento = new StatsFragment();
             } else if (id == R.id.nav_ajustes) {
@@ -75,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void cargarFragmento(Fragment fragmento, boolean agregarBackStack) {
+    public void cargarFragmento(Fragment fragmento, boolean agregarBackStack) {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.fragment_container, fragmento);
         if (agregarBackStack) {

@@ -14,6 +14,7 @@ import androidx.fragment.app.FragmentTransaction;
 import com.example.unitask_manager.R;
 import com.example.unitask_manager.fragments.AddTaskFragment;
 import com.example.unitask_manager.fragments.AgendaFragment;
+import com.example.unitask_manager.fragments.AjustesFragment;
 import com.example.unitask_manager.fragments.CursosFragment;
 import com.example.unitask_manager.fragments.DashboardFragment;
 import com.example.unitask_manager.fragments.StatsFragment;
@@ -58,6 +59,8 @@ public class MainActivity extends AppCompatActivity {
                 fragmento = new AddTaskFragment();
             } else if (id == R.id.nav_estadisticas) {
                 fragmento = new StatsFragment();
+            } else if (id == R.id.nav_ajustes) {
+                fragmento = new AjustesFragment();
             }
 
             if (fragmento != null) {

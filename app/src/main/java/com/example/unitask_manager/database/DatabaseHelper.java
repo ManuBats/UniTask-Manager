@@ -159,6 +159,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.delete(TABLE_CURSOS, COL_CURSO_ID + "=?", new String[]{String.valueOf(id)});
     }
 
+    public void actualizarCurso(Curso curso) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COL_CURSO_NOMBRE, curso.getNombre());
+        values.put(COL_CURSO_PROFESOR, curso.getProfesor());
+        values.put(COL_CURSO_COLOR, curso.getColor());
+        db.update(TABLE_CURSOS, values, COL_CURSO_ID + "=?", new String[]{String.valueOf(curso.getId())});
+    }
+
     // ===================== ACTIVIDADES =====================
 
     public long insertarActividad(Actividad actividad) {
@@ -226,6 +235,50 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void eliminarActividad(long id) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_ACTIVIDADES, COL_ACTIVIDAD_ID + "=?", new String[]{String.valueOf(id)});
+    }
+
+    public void actualizarActividad(Actividad actividad) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COL_ACTIVIDAD_ID_CURSO, actividad.getIdCurso());
+        values.put(COL_ACTIVIDAD_TITULO, actividad.getTitulo());
+        values.put(COL_ACTIVIDAD_TIPO, actividad.getTipo());
+        values.put(COL_ACTIVIDAD_FECHA, actividad.getFecha());
+        values.put(COL_ACTIVIDAD_HORA, actividad.getHora());
+        values.put(COL_ACTIVIDAD_PRIORIDAD, actividad.getPrioridad());
+        values.put(COL_ACTIVIDAD_DESCRIPCION, actividad.getDescripcion());
+        values.put(COL_ACTIVIDAD_COMPLETADA, actividad.isCompletada() ? 1 : 0);
+        db.update(TABLE_ACTIVIDADES, values, COL_ACTIVIDAD_ID + "=?", new String[]{String.valueOf(actividad.getId())});
+    }
+
+    public List<Actividad> obtenerActividadesPorFecha(String fecha) {
+        List<Actividad> lista = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_ACTIVIDADES, null,
+                COL_ACTIVIDAD_FECHA + "=?", new String[]{fecha},
+                null, null, COL_ACTIVIDAD_HORA + " ASC");
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                lista.add(crearActividadDesdeCursor(cursor));
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
+        return lista;
+    }
+
+    public List<Actividad> obtenerActividadesEntreFechas(String fechaInicio, String fechaFin) {
+        List<Actividad> lista = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT * FROM " + TABLE_ACTIVIDADES + " WHERE " + COL_ACTIVIDAD_FECHA + " BETWEEN ? AND ? ORDER BY " + COL_ACTIVIDAD_FECHA + " ASC",
+                new String[]{fechaInicio, fechaFin});
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                lista.add(crearActividadDesdeCursor(cursor));
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
+        return lista;
     }
 
     private Actividad crearActividadDesdeCursor(Cursor cursor) {

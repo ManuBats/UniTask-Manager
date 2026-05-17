@@ -1,11 +1,10 @@
 package com.example.unitask_manager.activities;
 
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
+import android.view.ViewGroup;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
@@ -29,16 +28,25 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         getWindow().setStatusBarColor(Color.TRANSPARENT);
-        findViewById(R.id.main).setBackgroundColor(Color.BLACK);
+
+        bottomNav = findViewById(R.id.bottom_navigation);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+            findViewById(R.id.fragment_container).setPadding(
+                    findViewById(R.id.fragment_container).getPaddingLeft(),
+                    top,
+                    findViewById(R.id.fragment_container).getPaddingRight(),
+                    0);
+
             int bottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
-            v.setPadding(v.getPaddingLeft(), top, v.getPaddingRight(), bottom);
+            if (bottom > 0) {
+                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) bottomNav.getLayoutParams();
+                params.bottomMargin = bottom;
+                bottomNav.setLayoutParams(params);
+            }
             return insets;
         });
-
-        bottomNav = findViewById(R.id.bottom_navigation);
 
         if (savedInstanceState == null) {
             cargarFragmento(new DashboardFragment(), false);

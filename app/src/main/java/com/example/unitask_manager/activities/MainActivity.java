@@ -1,13 +1,13 @@
 package com.example.unitask_manager.activities;
 
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
+import android.view.ViewGroup;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -32,11 +32,20 @@ public class MainActivity extends AppCompatActivity {
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         findViewById(R.id.main).setBackgroundColor(Color.BLACK);
 
+        bottomNav = findViewById(R.id.bottom_navigation);
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
             int bottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
-            v.setPadding(v.getPaddingLeft(), top, v.getPaddingRight(), bottom);
-            return insets;
+
+            // Solo el fragmento recibe el padding top (status bar)
+            findViewById(R.id.fragment_container).setPadding(0, 0, 0, 0);
+            v.setPadding(0, top, 0, 0);
+
+            // El nav bar crece hacia abajo para absorber la navigation bar del sistema
+            bottomNav.setPadding(0, 0, 0, bottom);
+
+            return WindowInsetsCompat.CONSUMED;
         });
 
         bottomNav = findViewById(R.id.bottom_navigation);

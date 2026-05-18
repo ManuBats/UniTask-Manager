@@ -1,5 +1,8 @@
 package com.example.unitask_manager.fragments;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -7,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -15,11 +19,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.unitask_manager.R;
-import com.example.unitask_manager.activities.MainActivity;
 import com.example.unitask_manager.adapters.CursosAdapter;
+import com.example.unitask_manager.database.DatabaseHelper;
 import com.example.unitask_manager.models.Curso;
-import com.example.unitask_manager.utils.Constants;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
@@ -28,167 +31,161 @@ import java.util.List;
 public class CursosFragment extends Fragment {
 
     private RecyclerView rvCursos;
-    private LinearLayout layoutEmpty;
-    private CursosAdapter adapter;
+    private TextView tvSinCursos, tvNumCursos;
+    private FloatingActionButton fabAdd;
 
-    private List<Curso> listaCursos;
-    private long nextId = 100;
+    private CursosAdapter adapter;
+    private final List<Curso> cursosList = new ArrayList<>();
+    private DatabaseHelper dbHelper;
+
+    private final String[] coloresDisponibles = {
+            "#7C3AED", "#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#EC4899",
+            "#8B5CF6", "#06B6D4", "#84CC16", "#F97316", "#E11D48", "#A855F7"
+    };
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_cursos, container, false);
         initViews(view);
-        configurarRecycler();
-        cargarDatosEjemplo();
-        configurarListeners(view);
+        dbHelper = new DatabaseHelper(requireContext());
+        setupRecyclerView();
+        setupListeners();
+        cargarCursos();
         return view;
     }
 
     private void initViews(View view) {
         rvCursos = view.findViewById(R.id.rv_cursos);
-        layoutEmpty = view.findViewById(R.id.layout_empty);
+        tvSinCursos = view.findViewById(R.id.tv_sin_cursos);
+        tvNumCursos = view.findViewById(R.id.tv_num_cursos);
+        fabAdd = view.findViewById(R.id.fab_add_curso);
     }
 
-    private void configurarRecycler() {
-        listaCursos = new ArrayList<>();
-        rvCursos.setLayoutManager(new LinearLayoutManager(getContext()));
-        rvCursos.setNestedScrollingEnabled(false);
-        adapter = new CursosAdapter(listaCursos, curso -> {
-            Bundle args = new Bundle();
-            args.putLong("curso_id", curso.getId());
-            args.putString("curso_nombre", curso.getNombre());
-            args.putString("curso_profesor", curso.getProfesor());
-            args.putString("curso_color", curso.getColor());
-            args.putInt("curso_pendientes", curso.getPendientes());
-            args.putString("curso_horario", curso.getHorario());
-            args.putInt("curso_progreso", curso.getProgreso());
-            args.putString("curso_descripcion", curso.getDescripcion());
-            args.putInt("curso_icon", curso.getIconResId());
-            DetalleCursoFragment detalle = new DetalleCursoFragment();
-            detalle.setArguments(args);
-            if (getActivity() instanceof MainActivity) {
-                ((MainActivity) getActivity()).cargarFragmento(detalle, true);
-            }
-        });
+    private void setupRecyclerView() {
+        rvCursos.setLayoutManager(new LinearLayoutManager(requireContext()));
+        adapter = new CursosAdapter(cursosList,
+                this::mostrarDialogoEditarCurso,
+                this::confirmarEliminarCurso);
         rvCursos.setAdapter(adapter);
-
-        requireActivity().getSupportFragmentManager().setFragmentResultListener("curso_delete", this, (requestKey, bundle) -> {
-            long deletedId = bundle.getLong("curso_id");
-            for (int i = 0; i < listaCursos.size(); i++) {
-                if (listaCursos.get(i).getId() == deletedId) {
-                    listaCursos.remove(i);
-                    break;
-                }
-            }
-            adapter.notifyDataSetChanged();
-            actualizarEmptyState();
-        });
     }
 
-    private void cargarDatosEjemplo() {
-        Curso c1 = new Curso(1, "Programación II", "Ing. López", "#7C3AED", 4, "Lun y Mié 10:00-12:00", 45, "Programación orientada a objetos en Java. Se cubren herencia, polimorfismo, interfaces y manejo de excepciones.");
-        c1.setIconResId(R.drawable.ic_tarea);
-        listaCursos.add(c1);
-        Curso c2 = new Curso(2, "Cálculo Diferencial", "Ing. Martínez", "#3B82F6", 2, "Mar y Jue 08:00-10:00", 60, "Estudio de límites, derivadas y sus aplicaciones en problemas de ingeniería.");
-        c2.setIconResId(R.drawable.ic_stats);
-        listaCursos.add(c2);
-        Curso c3 = new Curso(3, "Física Mecánica", "Ing. García", "#10B981", 3, "Lun y Mié 14:00-16:00", 30, "Principios de mecánica clásica: cinemática, dinámica, trabajo y energía.");
-        c3.setIconResId(R.drawable.ic_urgent);
-        listaCursos.add(c3);
-        Curso c4 = new Curso(4, "Base de Datos", "Ing. Rodríguez", "#F59E0B", 5, "Mar y Jue 14:00-16:00", 20, "Diseño de bases de datos relacionales, modelado ER, SQL y normalización.");
-        c4.setIconResId(R.drawable.ic_agenda);
-        listaCursos.add(c4);
-        Curso c5 = new Curso(5, "Inglés Técnico", "Lic. Hernández", "#EC4899", 1, "Vie 10:00-12:00", 70, "Vocabulario técnico para ingeniería, redacción de informes y presentaciones.");
-        c5.setIconResId(R.drawable.ic_exposicion);
-        listaCursos.add(c5);
-        nextId = 6;
+    private void setupListeners() {
+        fabAdd.setOnClickListener(v -> mostrarDialogoCrearCurso());
+    }
+
+    private void cargarCursos() {
+        cursosList.clear();
+        cursosList.addAll(dbHelper.obtenerCursos());
         adapter.notifyDataSetChanged();
-        actualizarEmptyState();
+
+        tvNumCursos.setText(cursosList.size() + " curso" + (cursosList.size() != 1 ? "s" : ""));
+        tvSinCursos.setVisibility(cursosList.isEmpty() ? View.VISIBLE : View.GONE);
+        rvCursos.setVisibility(cursosList.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
-    private void actualizarEmptyState() {
-        if (listaCursos.isEmpty()) {
-            rvCursos.setVisibility(View.GONE);
-            layoutEmpty.setVisibility(View.VISIBLE);
-        } else {
-            rvCursos.setVisibility(View.VISIBLE);
-            layoutEmpty.setVisibility(View.GONE);
-        }
+    // ===================== DIÁLOGO CREAR/EDITAR CURSO =====================
+
+    private void mostrarDialogoCrearCurso() {
+        mostrarDialogoCurso(null);
     }
 
-    private void configurarListeners(View view) {
-        view.findViewById(R.id.btn_add_curso_header).setOnClickListener(v -> mostrarDialogoAgregarCurso());
+    private void mostrarDialogoEditarCurso(Curso curso) {
+        mostrarDialogoCurso(curso);
     }
 
-    private void mostrarDialogoAgregarCurso() {
-        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_add_curso, null);
-        TextInputEditText etNombre = dialogView.findViewById(R.id.et_curso_nombre);
-        TextInputEditText etHorario = dialogView.findViewById(R.id.et_curso_horario);
-        TextInputEditText etDocente = dialogView.findViewById(R.id.et_curso_docente);
-        TextInputEditText etDescripcion = dialogView.findViewById(R.id.et_curso_descripcion);
+    private void mostrarDialogoCurso(final Curso cursoExistente) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_curso, null);
+        builder.setView(dialogView);
+
+        TextInputEditText etNombre = dialogView.findViewById(R.id.et_nombre_curso);
+        TextInputEditText etProfesor = dialogView.findViewById(R.id.et_profesor_curso);
         LinearLayout layoutColores = dialogView.findViewById(R.id.layout_colores);
 
-        final String[] colorSeleccionado = {Constants.COLORES_CURSO[0]};
+        boolean esEdicion = cursoExistente != null;
+        builder.setTitle(esEdicion ? "Editar curso" : "Nuevo curso");
 
-        int size = getResources().getDimensionPixelSize(R.dimen.icon_lg);
-        int margin = getResources().getDimensionPixelSize(R.dimen.spacing_sm);
+        final String[] colorSeleccionado = {esEdicion ? cursoExistente.getColor() : coloresDisponibles[0]};
 
-        for (int i = 0; i < Constants.COLORES_CURSO.length; i++) {
-            ImageView circle = new ImageView(requireContext());
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(size, size);
-            params.setMargins(margin, 0, margin, 0);
-            circle.setLayoutParams(params);
+        if (esEdicion) {
+            etNombre.setText(cursoExistente.getNombre());
+            etProfesor.setText(cursoExistente.getProfesor());
+        }
 
-            GradientDrawable drawable = new GradientDrawable();
-            drawable.setShape(GradientDrawable.OVAL);
-            drawable.setColor(android.graphics.Color.parseColor(Constants.COLORES_CURSO[i]));
-            if (i == 0) drawable.setStroke(4, android.graphics.Color.WHITE);
-            circle.setBackground(drawable);
-            circle.setElevation(i == 0 ? 6f : 2f);
-            circle.setContentDescription("Color " + i);
+        for (int i = 0; i < coloresDisponibles.length; i++) {
+            String hexColor = coloresDisponibles[i];
+            ImageView colorView = new ImageView(requireContext());
+            int size = getResources().getDimensionPixelSize(R.dimen.icon_lg);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
+            lp.setMargins(4, 4, 4, 4);
+            colorView.setLayoutParams(lp);
 
-            final int index = i;
-            circle.setOnClickListener(v -> {
-                colorSeleccionado[0] = Constants.COLORES_CURSO[index];
+            GradientDrawable circle = new GradientDrawable();
+            circle.setShape(GradientDrawable.OVAL);
+            circle.setColor(Color.parseColor(hexColor));
+            circle.setStroke(3, hexColor.equals(colorSeleccionado[0])
+                    ? Color.parseColor("#1F2937") : Color.TRANSPARENT);
+            colorView.setBackground(circle);
+
+            final String currentColor = hexColor;
+            colorView.setOnClickListener(v -> {
+                colorSeleccionado[0] = currentColor;
                 for (int j = 0; j < layoutColores.getChildCount(); j++) {
                     View child = layoutColores.getChildAt(j);
-                    GradientDrawable d = (GradientDrawable) child.getBackground();
-                    if (j == index) {
-                        d.setStroke(4, android.graphics.Color.WHITE);
-                        child.setElevation(6f);
-                    } else {
-                        d.setStroke(0, android.graphics.Color.TRANSPARENT);
-                        child.setElevation(2f);
+                    if (child.getBackground() instanceof GradientDrawable) {
+                        GradientDrawable gd = (GradientDrawable) child.getBackground();
+                        gd.setStroke(3, coloresDisponibles[j].equals(currentColor)
+                                ? Color.parseColor("#1F2937") : Color.TRANSPARENT);
                     }
                 }
             });
 
-            layoutColores.addView(circle);
+            layoutColores.addView(colorView);
         }
 
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Nuevo Curso")
-                .setView(dialogView)
-                .setPositiveButton("Guardar", (dialog, which) -> {
-                    String nombre = etNombre.getText().toString().trim();
-                    if (nombre.isEmpty()) {
-                        Toast.makeText(getContext(), "El nombre es obligatorio", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    String docente = etDocente.getText().toString().trim();
-                    if (docente.isEmpty()) {
-                        Toast.makeText(getContext(), "El docente es obligatorio", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    String horario = etHorario.getText().toString().trim();
-                    String descripcion = etDescripcion.getText().toString().trim();
-                    long id = nextId++;
-                    listaCursos.add(new Curso(id, nombre, docente, colorSeleccionado[0], 0, horario, 0, descripcion));
-                    adapter.notifyDataSetChanged();
-                    actualizarEmptyState();
+        builder.setPositiveButton(esEdicion ? "Guardar" : "Crear", null);
+        builder.setNegativeButton("Cancelar", null);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String nombre = etNombre.getText().toString().trim();
+            if (nombre.isEmpty()) {
+                etNombre.setError("El nombre es obligatorio");
+                return;
+            }
+
+            String profesor = etProfesor.getText().toString().trim();
+
+            if (esEdicion) {
+                cursoExistente.setNombre(nombre);
+                cursoExistente.setProfesor(profesor);
+                cursoExistente.setColor(colorSeleccionado[0]);
+                dbHelper.actualizarCurso(cursoExistente);
+            } else {
+                Curso nuevo = new Curso(nombre, profesor, colorSeleccionado[0]);
+                dbHelper.insertarCurso(nuevo);
+            }
+
+            dialog.dismiss();
+            cargarCursos();
+        });
+    }
+
+    // ===================== ELIMINAR CURSO =====================
+
+    private void confirmarEliminarCurso(final Curso curso) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Eliminar curso")
+                .setMessage("¿Estás seguro de eliminar \"" + curso.getNombre() + "\"?\n" +
+                        "Todas las actividades asociadas también se eliminarán.")
+                .setPositiveButton("Eliminar", (dialog, which) -> {
+                    dbHelper.eliminarCurso(curso.getId());
+                    cargarCursos();
+                    Toast.makeText(requireContext(), "Curso eliminado", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("Cancelar", null)
                 .show();
     }
-
 }

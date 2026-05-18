@@ -17,4 +17,27 @@
     <string name="content_description_urgent">Urgente</string>
     <string name="content_description_completed">Completadas</string>
     <string name="content_description_pending">Pendientes</string>
+
+    <!-- Ajustes -->
+    <string name="settings_edit_profile_title">Editar perfil</string>
+    <string name="settings_edit_name_hint">Nombre completo</string>
+    <string name="settings_edit_name_helper">El correo es de demostración y no se puede cambiar.</string>
+    <string name="settings_save">Guardar</string>
+    <string name="settings_cancel">Cancelar</string>
+    <string name="settings_name_empty">Escribe un nombre válido</string>
+    <string name="settings_profile_updated">Perfil actualizado</string>
+    <string name="settings_notifications_on">Notificaciones activadas</string>
+    <string name="settings_notifications_off">Notificaciones desactivadas</string>
+    <string name="settings_privacy_title">Privacidad</string>
+    <string name="settings_privacy_message">UniTask almacena tus datos de forma local en este dispositivo.\n\n• No compartimos información con terceros.\n• Puedes eliminar datos desde la configuración del sistema.\n• Las notificaciones se controlan desde esta pantalla.\n\nEsta es una versión académica con fines demostrativos.</string>
+    <string name="settings_help_title">Centro de ayuda</string>
+    <string name="settings_help_message">¿Necesitas ayuda con UniTask?\n\n📧 Soporte: soporte@unitask.edu\n📞 Teléfono: +52 55 1234 5678\n🕐 Horario: Lun–Vie 9:00–18:00\n\nPreguntas frecuentes:\n• ¿Cómo agrego una tarea? Desde el Dashboard con el botón +.\n• ¿Cómo cambio mi nombre? En Ajustes → Editar perfil.\n• ¿Cómo activo el tema oscuro? En Preferencias → Tema oscuro.</string>
+    <string name="settings_about_title">Acerca de UniTask</string>
+    <string name="settings_about_message">UniTask Manager\nVersión 1.0.0 (mock)\n\nAplicación académica para organizar tareas universitarias.\n\nEquipo de desarrollo:\n• María García — UI/UX\n• Carlos López — Backend\n• Ana Martínez — QA\n\n© 2026 UniTask. Todos los derechos reservados.</string>
+    <string name="settings_understood">Entendido</string>
+    <string name="settings_logout_title">Cerrar sesión</string>
+    <string name="settings_logout_message">¿Seguro que deseas cerrar sesión?</string>
+    <string name="settings_logout_confirm">Sí, salir</string>
+    <string name="settings_logout_cancel">Cancelar</string>
+    <string name="settings_logout_success">Sesión cerrada (simulación)</string>
 </resources>

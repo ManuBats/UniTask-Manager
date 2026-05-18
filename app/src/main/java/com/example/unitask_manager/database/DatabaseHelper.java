@@ -16,7 +16,7 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "unitask.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     // Tabla Usuarios
     private static final String TABLE_USUARIOS = "usuarios";
@@ -31,6 +31,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COL_CURSO_NOMBRE = "nombre";
     private static final String COL_CURSO_PROFESOR = "profesor";
     private static final String COL_CURSO_COLOR = "color";
+    private static final String COL_CURSO_HORARIO = "horario";
+    private static final String COL_CURSO_DESCRIPCION = "descripcion";
 
     // Tabla Actividades
     private static final String TABLE_ACTIVIDADES = "actividades";
@@ -57,7 +59,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     + COL_CURSO_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                     + COL_CURSO_NOMBRE + " TEXT NOT NULL, "
                     + COL_CURSO_PROFESOR + " TEXT, "
-                    + COL_CURSO_COLOR + " TEXT DEFAULT '#7C3AED'"
+                    + COL_CURSO_COLOR + " TEXT DEFAULT '#7C3AED', "
+                    + COL_CURSO_HORARIO + " TEXT, "
+                    + COL_CURSO_DESCRIPCION + " TEXT"
                     + ")";
 
     private static final String CREATE_TABLE_ACTIVIDADES =
@@ -88,10 +92,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_ACTIVIDADES);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CURSOS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USUARIOS);
-        onCreate(db);
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE " + TABLE_CURSOS + " ADD COLUMN " + COL_CURSO_HORARIO + " TEXT");
+            db.execSQL("ALTER TABLE " + TABLE_CURSOS + " ADD COLUMN " + COL_CURSO_DESCRIPCION + " TEXT");
+        }
     }
 
     // ===================== USUARIO =====================
@@ -132,6 +136,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COL_CURSO_NOMBRE, curso.getNombre());
         values.put(COL_CURSO_PROFESOR, curso.getProfesor());
         values.put(COL_CURSO_COLOR, curso.getColor());
+        values.put(COL_CURSO_HORARIO, curso.getHorario());
+        values.put(COL_CURSO_DESCRIPCION, curso.getDescripcion());
         return db.insert(TABLE_CURSOS, null, values);
     }
 
@@ -141,12 +147,46 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor = db.query(TABLE_CURSOS, null, null, null, null, null, COL_CURSO_NOMBRE + " ASC");
         if (cursor != null && cursor.moveToFirst()) {
             do {
-                lista.add(new Curso(
-                        cursor.getLong(cursor.getColumnIndexOrThrow(COL_CURSO_ID)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(COL_CURSO_NOMBRE)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(COL_CURSO_PROFESOR)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(COL_CURSO_COLOR))
-                ));
+                long id = cursor.getLong(cursor.getColumnIndexOrThrow(COL_CURSO_ID));
+                String nombre = cursor.getString(cursor.getColumnIndexOrThrow(COL_CURSO_NOMBRE));
+                String profesor = cursor.getString(cursor.getColumnIndexOrThrow(COL_CURSO_PROFESOR));
+                String color = cursor.getString(cursor.getColumnIndexOrThrow(COL_CURSO_COLOR));
+                String horario = cursor.getString(cursor.getColumnIndexOrThrow(COL_CURSO_HORARIO));
+                String descripcion = cursor.getString(cursor.getColumnIndexOrThrow(COL_CURSO_DESCRIPCION));
+                int pendientes = contarPendientesPorCurso(id);
+                Curso curso = new Curso(id, nombre, profesor, color, pendientes);
+                curso.setHorario(horario);
+                curso.setDescripcion(descripcion);
+                lista.add(curso);
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
+        return lista;
+    }
+
+    public int contarPendientesPorCurso(long cursoId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT COUNT(*) FROM " + TABLE_ACTIVIDADES
+                        + " WHERE " + COL_ACTIVIDAD_ID_CURSO + "=? AND " + COL_ACTIVIDAD_COMPLETADA + "=?",
+                new String[]{String.valueOf(cursoId), "0"});
+        int count = 0;
+        if (cursor != null && cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+            cursor.close();
+        }
+        return count;
+    }
+
+    public List<Actividad> obtenerActividadesPorCursoId(long cursoId) {
+        List<Actividad> lista = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_ACTIVIDADES, null,
+                COL_ACTIVIDAD_ID_CURSO + "=?", new String[]{String.valueOf(cursoId)},
+                null, null, COL_ACTIVIDAD_FECHA + " ASC");
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                lista.add(crearActividadDesdeCursor(cursor));
             } while (cursor.moveToNext());
             cursor.close();
         }
@@ -165,6 +205,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COL_CURSO_NOMBRE, curso.getNombre());
         values.put(COL_CURSO_PROFESOR, curso.getProfesor());
         values.put(COL_CURSO_COLOR, curso.getColor());
+        values.put(COL_CURSO_HORARIO, curso.getHorario());
+        values.put(COL_CURSO_DESCRIPCION, curso.getDescripcion());
         db.update(TABLE_CURSOS, values, COL_CURSO_ID + "=?", new String[]{String.valueOf(curso.getId())});
     }
 

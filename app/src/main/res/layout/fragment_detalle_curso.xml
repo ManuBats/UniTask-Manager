@@ -116,6 +116,17 @@
                     </LinearLayout>
 
                     <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_edit_curso_detail"
+                        style="@style/Widget.Material3.Button.IconButton"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center_vertical"
+                        android:backgroundTint="@color/transparent"
+                        android:contentDescription="Editar curso"
+                        app:icon="@drawable/ic_edit"
+                        app:iconTint="@color/text_white" />
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_delete_curso_detail"
                         style="@style/Widget.Material3.Button.IconButton"
                         android:layout_width="40dp"

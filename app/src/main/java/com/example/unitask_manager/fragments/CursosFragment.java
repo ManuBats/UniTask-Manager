@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.unitask_manager.R;
+import com.example.unitask_manager.activities.MainActivity;
 import com.example.unitask_manager.adapters.CursosAdapter;
 import com.example.unitask_manager.database.DatabaseHelper;
 import com.example.unitask_manager.models.Curso;
@@ -64,13 +65,27 @@ public class CursosFragment extends Fragment {
     private void setupRecyclerView() {
         rvCursos.setLayoutManager(new LinearLayoutManager(requireContext()));
         adapter = new CursosAdapter(cursosList,
-                this::mostrarDialogoEditarCurso,
+                this::abrirDetalleCurso,
                 this::confirmarEliminarCurso);
         rvCursos.setAdapter(adapter);
     }
 
     private void setupListeners() {
         fabAdd.setOnClickListener(v -> mostrarDialogoCrearCurso());
+    }
+
+    private void abrirDetalleCurso(Curso curso) {
+        DetalleCursoFragment fragment = new DetalleCursoFragment();
+        Bundle args = new Bundle();
+        args.putLong("curso_id", curso.getId());
+        args.putString("curso_nombre", curso.getNombre());
+        args.putString("curso_profesor", curso.getProfesor());
+        args.putString("curso_color", curso.getColor());
+        args.putInt("curso_pendientes", curso.getPendientes());
+        args.putString("curso_horario", curso.getHorario());
+        args.putString("curso_descripcion", curso.getDescripcion());
+        fragment.setArguments(args);
+        ((MainActivity) requireActivity()).cargarFragmento(fragment, true);
     }
 
     private void cargarCursos() {
@@ -95,11 +110,13 @@ public class CursosFragment extends Fragment {
 
     private void mostrarDialogoCurso(final Curso cursoExistente) {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_curso, null);
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_curso, null);
         builder.setView(dialogView);
 
-        TextInputEditText etNombre = dialogView.findViewById(R.id.et_nombre_curso);
-        TextInputEditText etProfesor = dialogView.findViewById(R.id.et_profesor_curso);
+        TextInputEditText etNombre = dialogView.findViewById(R.id.et_curso_nombre);
+        TextInputEditText etProfesor = dialogView.findViewById(R.id.et_curso_docente);
+        TextInputEditText etHorario = dialogView.findViewById(R.id.et_curso_horario);
+        TextInputEditText etDescripcion = dialogView.findViewById(R.id.et_curso_descripcion);
         LinearLayout layoutColores = dialogView.findViewById(R.id.layout_colores);
 
         boolean esEdicion = cursoExistente != null;
@@ -109,7 +126,9 @@ public class CursosFragment extends Fragment {
 
         if (esEdicion) {
             etNombre.setText(cursoExistente.getNombre());
-            etProfesor.setText(cursoExistente.getProfesor());
+            etProfesor.setText(cursoExistente.getProfesor() != null ? cursoExistente.getProfesor() : "");
+            etHorario.setText(cursoExistente.getHorario() != null ? cursoExistente.getHorario() : "");
+            etDescripcion.setText(cursoExistente.getDescripcion() != null ? cursoExistente.getDescripcion() : "");
         }
 
         for (int i = 0; i < coloresDisponibles.length; i++) {
@@ -157,14 +176,20 @@ public class CursosFragment extends Fragment {
             }
 
             String profesor = etProfesor.getText().toString().trim();
+            String horario = etHorario.getText().toString().trim();
+            String descripcion = etDescripcion.getText().toString().trim();
 
             if (esEdicion) {
                 cursoExistente.setNombre(nombre);
                 cursoExistente.setProfesor(profesor);
                 cursoExistente.setColor(colorSeleccionado[0]);
+                cursoExistente.setHorario(horario);
+                cursoExistente.setDescripcion(descripcion);
                 dbHelper.actualizarCurso(cursoExistente);
             } else {
                 Curso nuevo = new Curso(nombre, profesor, colorSeleccionado[0]);
+                nuevo.setHorario(horario);
+                nuevo.setDescripcion(descripcion);
                 dbHelper.insertarCurso(nuevo);
             }
 

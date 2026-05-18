@@ -1,10 +1,15 @@
 package com.example.unitask_manager.fragments;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -17,9 +22,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.unitask_manager.R;
 import com.example.unitask_manager.adapters.ActividadesAdapter;
+import com.example.unitask_manager.database.DatabaseHelper;
 import com.example.unitask_manager.models.Actividad;
+import com.example.unitask_manager.models.Curso;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +39,7 @@ public class DetalleCursoFragment extends Fragment {
     private ImageView ivIcono;
     private ProgressBar progressBar;
     private View viewColor;
-    private View btnDelete, btnBack;
+    private View btnDelete, btnEdit, btnBack;
     private RecyclerView rvActividades;
     private FloatingActionButton fabAdd;
 
@@ -60,6 +68,7 @@ public class DetalleCursoFragment extends Fragment {
         ivIcono = view.findViewById(R.id.iv_detalle_icono);
         viewColor = view.findViewById(R.id.view_header_color);
         btnDelete = view.findViewById(R.id.btn_delete_curso_detail);
+        btnEdit = view.findViewById(R.id.btn_edit_curso_detail);
         btnBack = view.findViewById(R.id.btn_back_curso);
         rvActividades = view.findViewById(R.id.rv_detalle_actividades);
         fabAdd = view.findViewById(R.id.fab_add_actividad);
@@ -127,6 +136,19 @@ public class DetalleCursoFragment extends Fragment {
         long cursoId = getArguments() != null ? getArguments().getLong("curso_id", 0) : 0;
         listaActividades.addAll(obtenerActividadesPorCurso(cursoId));
         adapter.notifyDataSetChanged();
+        actualizarProgreso();
+    }
+
+    private void actualizarProgreso() {
+        int total = listaActividades.size();
+        int completadas = 0;
+        for (Actividad a : listaActividades) {
+            if (a.isCompletada()) completadas++;
+        }
+        int progreso = total > 0 ? (completadas * 100 / total) : 0;
+        progressBar.setProgress(progreso);
+        tvProgresoTexto.setText(progreso + "%");
+        tvPendientes.setText((total - completadas) + " actividad" + ((total - completadas) != 1 ? "es" : "") + " pendiente" + ((total - completadas) != 1 ? "s" : ""));
     }
 
     private void configurarListeners(View view) {
@@ -136,6 +158,8 @@ public class DetalleCursoFragment extends Fragment {
         btnBack.setOnClickListener(v ->
                 requireActivity().getSupportFragmentManager().popBackStack());
 
+        btnEdit.setOnClickListener(v -> mostrarDialogoEditarCurso());
+
         btnDelete.setOnClickListener(v -> {
             String nombreCurso = getArguments() != null ? getArguments().getString("curso_nombre", "este curso") : "este curso";
             new MaterialAlertDialogBuilder(requireContext())
@@ -143,9 +167,9 @@ public class DetalleCursoFragment extends Fragment {
                     .setMessage("¿Eliminar \"" + nombreCurso + "\" y sus actividades?")
                     .setPositiveButton("Eliminar", (dialog, which) -> {
                         long cursoId = getArguments() != null ? getArguments().getLong("curso_id", 0) : 0;
-                        Bundle result = new Bundle();
-                        result.putLong("curso_id", cursoId);
-                        requireActivity().getSupportFragmentManager().setFragmentResult("curso_delete", result);
+                        DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
+                        dbHelper.eliminarCurso(cursoId);
+                        Toast.makeText(getContext(), "Curso eliminado", Toast.LENGTH_SHORT).show();
                         requireActivity().getSupportFragmentManager().popBackStack();
                     })
                     .setNegativeButton("Cancelar", null)
@@ -153,37 +177,108 @@ public class DetalleCursoFragment extends Fragment {
         });
     }
 
-    private List<Actividad> obtenerActividadesPorCurso(long cursoId) {
-        List<Actividad> lista = new ArrayList<>();
-        int idCurso = (int) cursoId;
-        switch (idCurso) {
-            case 1:
-                lista.add(new Actividad("Entregar proyecto final", "Tarea", "18 mayo 2026", "11:59 PM", Actividad.PRIORIDAD_ALTA, "Entrega del proyecto integrador", 1));
-                lista.add(new Actividad("Examen parcial", "Examen", "20 mayo 2026", "10:00 AM", Actividad.PRIORIDAD_ALTA, "Temas: POO, herencia, polimorfismo", 1));
-                lista.add(new Actividad("Ejercicios de arrays", "Tarea", "22 mayo 2026", "11:59 PM", Actividad.PRIORIDAD_MEDIA, "Arrays multidimensionales", 1));
-                lista.add(new Actividad("Práctica de POO", "Tarea", "25 mayo 2026", "11:59 PM", Actividad.PRIORIDAD_MEDIA, "Diagrama de clases", 1));
-                break;
-            case 2:
-                lista.add(new Actividad("Derivadas parciales", "Tarea", "19 mayo 2026", "11:59 PM", Actividad.PRIORIDAD_ALTA, "Ejercicios del capítulo 14", 2));
-                lista.add(new Actividad("Tarea de integrales", "Tarea", "23 mayo 2026", "11:59 PM", Actividad.PRIORIDAD_MEDIA, "Integrales definidas", 2));
-                break;
-            case 3:
-                lista.add(new Actividad("Laboratorio de péndulo", "Tarea", "17 mayo 2026", "8:00 AM", Actividad.PRIORIDAD_ALTA, "Reporte de laboratorio", 3));
-                lista.add(new Actividad("Problemas de cinemática", "Tarea", "21 mayo 2026", "11:59 PM", Actividad.PRIORIDAD_MEDIA, "Ejercicios MRU y MRUV", 3));
-                lista.add(new Actividad("Examen unidad 3", "Examen", "28 mayo 2026", "10:00 AM", Actividad.PRIORIDAD_ALTA, "Dinámica y energía", 3));
-                break;
-            case 4:
-                lista.add(new Actividad("Diagrama ER", "Tarea", "16 mayo 2026", "11:59 PM", Actividad.PRIORIDAD_ALTA, "Diagrama entidad-relación del proyecto", 4));
-                lista.add(new Actividad("Consultas SQL", "Tarea", "18 mayo 2026", "11:59 PM", Actividad.PRIORIDAD_MEDIA, "Consultas con JOIN", 4));
-                lista.add(new Actividad("Normalización", "Tarea", "24 mayo 2026", "11:59 PM", Actividad.PRIORIDAD_MEDIA, "Formas normales 1FN-3FN", 4));
-                lista.add(new Actividad("Proyecto BD", "Proyecto", "30 mayo 2026", "11:59 PM", Actividad.PRIORIDAD_ALTA, "Base de datos completa", 4));
-                break;
-            case 5:
-                lista.add(new Actividad("Ensayo final", "Tarea", "26 mayo 2026", "11:59 PM", Actividad.PRIORIDAD_MEDIA, "Ensayo sobre tecnología", 5));
-                break;
-            default:
-                lista.add(new Actividad("No hay actividades para este curso", "Tarea", "—", "", Actividad.PRIORIDAD_BAJA, "", cursoId));
+    private void mostrarDialogoEditarCurso() {
+        Bundle args = getArguments();
+        if (args == null) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_curso, null);
+        builder.setView(dialogView);
+
+        TextInputEditText etNombre = dialogView.findViewById(R.id.et_curso_nombre);
+        TextInputEditText etProfesor = dialogView.findViewById(R.id.et_curso_docente);
+        TextInputEditText etHorario = dialogView.findViewById(R.id.et_curso_horario);
+        TextInputEditText etDescripcion = dialogView.findViewById(R.id.et_curso_descripcion);
+        LinearLayout layoutColores = dialogView.findViewById(R.id.layout_colores);
+
+        String[] coloresDisponibles = {
+                "#7C3AED", "#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#EC4899",
+                "#8B5CF6", "#06B6D4", "#84CC16", "#F97316", "#E11D48", "#A855F7"
+        };
+
+        builder.setTitle("Editar curso");
+
+        etNombre.setText(args.getString("curso_nombre", ""));
+        etProfesor.setText(args.getString("curso_profesor", ""));
+        etHorario.setText(args.getString("curso_horario", ""));
+        etDescripcion.setText(args.getString("curso_descripcion", ""));
+
+        final String[] colorSeleccionado = {args.getString("curso_color", coloresDisponibles[0])};
+
+        for (String hexColor : coloresDisponibles) {
+            ImageView colorView = new ImageView(requireContext());
+            int size = getResources().getDimensionPixelSize(R.dimen.icon_lg);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
+            lp.setMargins(4, 4, 4, 4);
+            colorView.setLayoutParams(lp);
+
+            GradientDrawable circle = new GradientDrawable();
+            circle.setShape(GradientDrawable.OVAL);
+            circle.setColor(Color.parseColor(hexColor));
+            circle.setStroke(3, hexColor.equals(colorSeleccionado[0])
+                    ? Color.parseColor("#1F2937") : Color.TRANSPARENT);
+            colorView.setBackground(circle);
+
+            colorView.setOnClickListener(v -> {
+                colorSeleccionado[0] = hexColor;
+                for (int j = 0; j < layoutColores.getChildCount(); j++) {
+                    View child = layoutColores.getChildAt(j);
+                    if (child.getBackground() instanceof GradientDrawable) {
+                        GradientDrawable gd = (GradientDrawable) child.getBackground();
+                        gd.setStroke(3, coloresDisponibles[j].equals(hexColor)
+                                ? Color.parseColor("#1F2937") : Color.TRANSPARENT);
+                    }
+                }
+            });
+
+            layoutColores.addView(colorView);
         }
-        return lista;
+
+        builder.setPositiveButton("Guardar", null);
+        builder.setNegativeButton("Cancelar", null);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String nombre = etNombre.getText().toString().trim();
+            if (nombre.isEmpty()) {
+                etNombre.setError("El nombre es obligatorio");
+                return;
+            }
+
+            String profesor = etProfesor.getText().toString().trim();
+            String horario = etHorario.getText().toString().trim();
+            String descripcion = etDescripcion.getText().toString().trim();
+            DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
+
+            Curso curso = new Curso(
+                    args.getLong("curso_id", 0),
+                    nombre,
+                    profesor,
+                    colorSeleccionado[0]
+            );
+            curso.setHorario(horario);
+            curso.setDescripcion(descripcion);
+            dbHelper.actualizarCurso(curso);
+
+            args.putString("curso_nombre", nombre);
+            args.putString("curso_profesor", profesor);
+            args.putString("curso_color", colorSeleccionado[0]);
+            args.putString("curso_horario", horario);
+            args.putString("curso_descripcion", descripcion);
+            cargarInfoCurso();
+
+            dialog.dismiss();
+        });
+    }
+
+    private List<Actividad> obtenerActividadesPorCurso(long cursoId) {
+        DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
+        List<Actividad> actividades = dbHelper.obtenerActividadesPorCursoId(cursoId);
+        if (actividades.isEmpty()) {
+            actividades.add(new Actividad("No hay actividades para este curso", "Tarea", "—", "", Actividad.PRIORIDAD_BAJA, "", cursoId));
+        }
+        return actividades;
     }
 }

@@ -69,4 +69,13 @@
     <!-- Bottom nav -->
     <color name="nav_active">#FF7C3AED</color>
     <color name="nav_inactive">#FF9CA3AF</color>
+
+    <!-- Settings - Dark theme -->
+    <color name="settings_bg_dark">#FF121212</color>
+    <color name="settings_card_dark">#FF1E1E1E</color>
+    <color name="settings_text_primary_dark">#FFE0E0E0</color>
+    <color name="settings_text_secondary_dark">#FF9E9E9E</color>
+    <color name="settings_accent_dark">#FFBB86FC</color>
+    <color name="settings_switch_track_off">#FF4A4A4A</color>
+    <color name="settings_icon_bg_dark">#FF2A2A2A</color>
 </resources>

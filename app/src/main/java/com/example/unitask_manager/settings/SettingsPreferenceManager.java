@@ -13,11 +13,14 @@ public final class SettingsPreferenceManager {
     private static final String PREFS_NAME = "unitask_settings_prefs";
 
     private static final String KEY_USER_NAME = "user_name";
+    private static final String KEY_USER_EMAIL = "user_email";
+    private static final String KEY_USER_PASSWORD = "user_password";
     private static final String KEY_NOTIFICATIONS_ENABLED = "notifications_enabled";
     private static final String KEY_DARK_THEME_ENABLED = "dark_theme_enabled";
 
     private static final String DEFAULT_USER_NAME = "María García";
     private static final String DEFAULT_EMAIL = "maria.garcia@universidad.edu";
+    private static final String DEFAULT_PASSWORD = "";
 
     private final SharedPreferences preferences;
 
@@ -36,8 +39,21 @@ public final class SettingsPreferenceManager {
     }
 
     @NonNull
-    public String getDefaultEmail() {
-        return DEFAULT_EMAIL;
+    public String getUserEmail() {
+        return preferences.getString(KEY_USER_EMAIL, DEFAULT_EMAIL);
+    }
+
+    public void setUserEmail(@NonNull String email) {
+        preferences.edit().putString(KEY_USER_EMAIL, email.trim()).apply();
+    }
+
+    @NonNull
+    public String getUserPassword() {
+        return preferences.getString(KEY_USER_PASSWORD, DEFAULT_PASSWORD);
+    }
+
+    public void setUserPassword(@NonNull String password) {
+        preferences.edit().putString(KEY_USER_PASSWORD, password.trim()).apply();
     }
 
     public boolean isNotificationsEnabled() {

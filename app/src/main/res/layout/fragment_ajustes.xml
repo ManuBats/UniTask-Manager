@@ -199,6 +199,70 @@
                             android:layout_marginEnd="16dp"
                             android:background="@drawable/bg_settings_divider" />
 
+                        <!-- Cambiar contraseña -->
+                        <LinearLayout
+                            android:id="@+id/row_cambiar_contrasena"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="14dp">
+
+                            <FrameLayout
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:background="@drawable/bg_settings_icon">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_settings_privacy" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="14dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Cambiar contraseña"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold"
+                                    tools:ignore="HardcodedText" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="Actualiza tu clave de acceso"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="14sp"
+                                    tools:ignore="HardcodedText" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_settings_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginStart="70dp"
+                            android:layout_marginEnd="16dp"
+                            android:background="@drawable/bg_settings_divider" />
+
                         <!-- Notificaciones -->
                         <LinearLayout
                             android:id="@+id/row_notificaciones"
@@ -254,7 +318,8 @@
                                 android:layout_height="wrap_content"
                                 android:checked="true"
                                 app:thumbTint="@color/white"
-                                app:trackTint="@color/primary_purple" />
+                                app:trackTint="@color/switch_track_selector"
+                                app:trackDecorationTint="@color/switch_track_selector" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -344,7 +409,8 @@
                                 android:clickable="true"
                                 android:focusable="true"
                                 app:thumbTint="@color/white"
-                                app:trackTint="@color/primary_purple" />
+                                app:trackTint="@color/switch_track_selector"
+                                app:trackDecorationTint="@color/switch_track_selector" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>

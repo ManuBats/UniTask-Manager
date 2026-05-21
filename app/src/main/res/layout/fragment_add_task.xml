@@ -28,22 +28,48 @@
                 app:cardBackgroundColor="@color/transparent"
                 app:shapeAppearanceOverlay="@style/BottomRoundedShape">
 
-                <RelativeLayout
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/gradient_header"
-                    android:paddingStart="24dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="20dp"
                     android:paddingEnd="24dp"
                     android:paddingTop="44dp"
                     android:paddingBottom="40dp">
 
+                    <FrameLayout
+                        android:id="@+id/btn_back_add_task"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="center_vertical"
+                        android:background="@drawable/bg_circle"
+                        android:backgroundTint="#22000000"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:contentDescription="Volver">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:text="‹"
+                            android:textColor="@color/text_white"
+                            android:textSize="28sp"
+                            android:textStyle="bold" />
+                    </FrameLayout>
+
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:gravity="center"
                         android:orientation="horizontal">
 
                         <TextView
+                            android:id="@+id/tv_titulo_header"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Nueva actividad"
@@ -56,8 +82,8 @@
                             android:layout_height="22dp"
                             android:layout_marginStart="8dp"
                             android:src="@drawable/ic_tarea"
-                            android:tint="@color/text_white"
-                            android:contentDescription="Hoja" />
+app:tint="@color/text_white"
+android:contentDescription="Hoja" />
 
                         <ImageView
                             android:layout_width="26dp"
@@ -66,7 +92,7 @@
                             android:src="@drawable/ic_add_task"
                             android:contentDescription="Lapiz" />
                     </LinearLayout>
-                </RelativeLayout>
+                </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <!-- FORM CONTENT -->
@@ -90,7 +116,7 @@
                     android:layout_height="18dp"
                     android:src="@drawable/ic_tarea"
                     android:contentDescription="Titulo"
-                    android:tint="@color/text_primary" />
+                    app:tint="@color/text_primary" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -139,7 +165,7 @@
                     android:layout_height="18dp"
                     android:src="@drawable/ic_examen"
                     android:contentDescription="Tipo"
-                    android:tint="@color/text_primary" />
+                    app:tint="@color/text_primary" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -184,7 +210,7 @@
                     android:layout_height="18dp"
                     android:src="@drawable/ic_curso"
                     android:contentDescription="Curso"
-                    android:tint="@color/text_primary" />
+                    app:tint="@color/text_primary" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -229,7 +255,7 @@
                     android:layout_height="18dp"
                     android:src="@drawable/ic_agenda"
                     android:contentDescription="Fecha"
-                    android:tint="@color/text_primary" />
+                    app:tint="@color/text_primary" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -280,7 +306,7 @@
                     android:layout_height="18dp"
                     android:src="@drawable/ic_pending"
                     android:contentDescription="Hora"
-                    android:tint="@color/text_primary" />
+                    app:tint="@color/text_primary" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -411,7 +437,7 @@
                     android:layout_height="18dp"
                     android:src="@drawable/ic_tarea"
                     android:contentDescription="Descripcion"
-                    android:tint="@color/text_primary" />
+                    app:tint="@color/text_primary" />
 
                 <TextView
                     android:layout_width="wrap_content"

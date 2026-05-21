@@ -178,6 +178,34 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return count;
     }
 
+    public int contarCompletadasPorCurso(long cursoId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT COUNT(*) FROM " + TABLE_ACTIVIDADES
+                        + " WHERE " + COL_ACTIVIDAD_ID_CURSO + "=? AND " + COL_ACTIVIDAD_COMPLETADA + "=?",
+                new String[]{String.valueOf(cursoId), "1"});
+        int count = 0;
+        if (cursor != null && cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+            cursor.close();
+        }
+        return count;
+    }
+
+    public int contarActividadesPorCurso(long cursoId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT COUNT(*) FROM " + TABLE_ACTIVIDADES
+                        + " WHERE " + COL_ACTIVIDAD_ID_CURSO + "=?",
+                new String[]{String.valueOf(cursoId)});
+        int count = 0;
+        if (cursor != null && cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+            cursor.close();
+        }
+        return count;
+    }
+
     public List<Actividad> obtenerActividadesPorCursoId(long cursoId) {
         List<Actividad> lista = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -212,6 +240,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // ===================== ACTIVIDADES =====================
 
+    public void limpiarTodo() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_ACTIVIDADES, null, null);
+        db.delete(TABLE_CURSOS, null, null);
+        db.delete(TABLE_USUARIOS, null, null);
+    }
+
     public long insertarActividad(Actividad actividad) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -226,6 +261,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.insert(TABLE_ACTIVIDADES, null, values);
     }
 
+    private String actividadesValidas() {
+        return "(" + COL_ACTIVIDAD_ID_CURSO + "=-1 OR " + COL_ACTIVIDAD_ID_CURSO
+                + " IN (SELECT " + COL_CURSO_ID + " FROM " + TABLE_CURSOS + "))";
+    }
+
     public List<Actividad> obtenerActividades() {
         return obtenerActividades(null, null);
     }
@@ -233,7 +273,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<Actividad> obtenerActividades(String orderBy, String limit) {
         List<Actividad> lista = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        String query = "SELECT * FROM " + TABLE_ACTIVIDADES;
+        String query = "SELECT * FROM " + TABLE_ACTIVIDADES + " WHERE " + actividadesValidas();
         if (orderBy != null) query += " ORDER BY " + orderBy;
         if (limit != null) query += " LIMIT " + limit;
         Cursor cursor = db.rawQuery(query, null);
@@ -254,10 +294,26 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return contarActividades(false);
     }
 
+    public int contarCompletadasPorFecha(String fecha) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT COUNT(*) FROM " + TABLE_ACTIVIDADES
+                        + " WHERE " + COL_ACTIVIDAD_COMPLETADA + "=1"
+                        + " AND " + COL_ACTIVIDAD_FECHA + "=?"
+                        + " AND " + actividadesValidas(),
+                new String[]{fecha});
+        int count = 0;
+        if (cursor != null && cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+            cursor.close();
+        }
+        return count;
+    }
+
     private int contarActividades(boolean completadas) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(
-                "SELECT COUNT(*) FROM " + TABLE_ACTIVIDADES + " WHERE " + COL_ACTIVIDAD_COMPLETADA + "=?",
+                "SELECT COUNT(*) FROM " + TABLE_ACTIVIDADES + " WHERE " + COL_ACTIVIDAD_COMPLETADA + "=? AND " + actividadesValidas(),
                 new String[]{completadas ? "1" : "0"});
         int count = 0;
         if (cursor != null && cursor.moveToFirst()) {
@@ -293,11 +349,34 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.update(TABLE_ACTIVIDADES, values, COL_ACTIVIDAD_ID + "=?", new String[]{String.valueOf(actividad.getId())});
     }
 
+    public List<Actividad> obtenerActividadesPorPrioridad(int prioridad, boolean soloNoCompletadas) {
+        List<Actividad> lista = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String where = COL_ACTIVIDAD_PRIORIDAD + "=? AND " + actividadesValidas();
+        String[] whereArgs;
+        if (soloNoCompletadas) {
+            where += " AND " + COL_ACTIVIDAD_COMPLETADA + "=?";
+            whereArgs = new String[]{String.valueOf(prioridad), "0"};
+        } else {
+            whereArgs = new String[]{String.valueOf(prioridad)};
+        }
+        Cursor cursor = db.query(TABLE_ACTIVIDADES, null,
+                where, whereArgs, null, null,
+                COL_ACTIVIDAD_FECHA + " ASC, " + COL_ACTIVIDAD_HORA + " ASC");
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                lista.add(crearActividadDesdeCursor(cursor));
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
+        return lista;
+    }
+
     public List<Actividad> obtenerActividadesPorFecha(String fecha) {
         List<Actividad> lista = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_ACTIVIDADES, null,
-                COL_ACTIVIDAD_FECHA + "=?", new String[]{fecha},
+                COL_ACTIVIDAD_FECHA + "=? AND " + actividadesValidas(), new String[]{fecha},
                 null, null, COL_ACTIVIDAD_HORA + " ASC");
         if (cursor != null && cursor.moveToFirst()) {
             do {

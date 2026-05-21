@@ -17,7 +17,8 @@ public class CircularProgressView extends View {
 
     private static final int DEFAULT_SIZE = 140;
     private static final float STROKE_WIDTH = 14f;
-    private static final float PROGRESS = 0.68f;
+
+    private float progress = 0f;
 
     private final Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint progressPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -39,6 +40,11 @@ public class CircularProgressView extends View {
     public CircularProgressView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
+    }
+
+    public void setProgress(float progress) {
+        this.progress = Math.max(0f, Math.min(1f, progress));
+        invalidate();
     }
 
     private void init() {
@@ -90,10 +96,12 @@ public class CircularProgressView extends View {
     protected void onDraw(Canvas canvas) {
         canvas.drawCircle(cx, cy, radius, bgPaint);
 
-        float sweep = 360f * PROGRESS;
-        canvas.drawArc(arcRect, -90, sweep, false, progressPaint);
+        if (progress > 0f) {
+            float sweep = 360f * progress;
+            canvas.drawArc(arcRect, -90, sweep, false, progressPaint);
+        }
 
-        String pct = Math.round(PROGRESS * 100) + "%";
+        String pct = Math.round(progress * 100) + "%";
         float textY = cy - dpToPx(6);
         canvas.drawText(pct, cx, textY, textPaint);
 

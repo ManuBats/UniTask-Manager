@@ -1,10 +1,12 @@
 package com.example.unitask_manager.activities;
 
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.ViewGroup;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -12,7 +14,6 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.example.unitask_manager.R;
-import com.example.unitask_manager.fragments.AddTaskFragment;
 import com.example.unitask_manager.fragments.AgendaFragment;
 import com.example.unitask_manager.fragments.AjustesFragment;
 import com.example.unitask_manager.fragments.CursosFragment;
@@ -26,6 +27,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SharedPreferences prefs = getSharedPreferences("unitask_settings_prefs", MODE_PRIVATE);
+        boolean darkTheme = prefs.getBoolean("dark_theme_enabled", false);
+        AppCompatDelegate.setDefaultNightMode(darkTheme ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -64,8 +69,6 @@ public class MainActivity extends AppCompatActivity {
                 fragmento = new CursosFragment();
             } else if (id == R.id.nav_agenda) {
                 fragmento = new AgendaFragment();
-            } else if (id == R.id.nav_add_task) {
-                fragmento = new AddTaskFragment();
             } else if (id == R.id.nav_estadisticas) {
                 fragmento = new StatsFragment();
             } else if (id == R.id.nav_ajustes) {

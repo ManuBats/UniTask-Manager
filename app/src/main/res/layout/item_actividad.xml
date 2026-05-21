@@ -80,6 +80,18 @@
                 android:fontFamily="sans-serif" />
         </LinearLayout>
 
+        <!-- Check Button -->
+        <ImageView
+            android:id="@+id/iv_actividad_check"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="10dp"
+            android:padding="4dp"
+            android:contentDescription="Completar actividad"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless" />
+
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

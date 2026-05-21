@@ -13,9 +13,9 @@ import com.example.unitask_manager.R;
 
 public class BarChartView extends View {
 
-    private static final String[] DAYS = {"L", "M", "M", "J", "V", "S", "D"};
-    private static final int[] VALUES = {3, 5, 2, 4, 6, 1, 2};
-    private static final int MAX_VALUE = 6;
+    private int[] values = {};
+    private String[] dayLabels = {};
+    private int maxValue = 1;
 
     private final Paint barPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint gridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -38,6 +38,17 @@ public class BarChartView extends View {
     public BarChartView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
+    }
+
+    public void setData(int[] values, String[] dayLabels) {
+        this.values = values != null ? values : new int[]{};
+        this.dayLabels = dayLabels != null ? dayLabels : new String[]{};
+        this.maxValue = 1;
+        for (int v : this.values) {
+            if (v > maxValue) maxValue = v;
+        }
+        calcularEspaciado();
+        invalidate();
     }
 
     private void init() {
@@ -80,8 +91,13 @@ public class BarChartView extends View {
         chartTop = padTop;
         chartBottom = h - padBottom;
 
+        calcularEspaciado();
+    }
+
+    private void calcularEspaciado() {
         float totalWidth = chartRight - chartLeft;
-        barSpacing = totalWidth / DAYS.length;
+        int count = Math.max(dayLabels.length, 1);
+        barSpacing = totalWidth / count;
         barWidth = barSpacing * 0.45f;
     }
 
@@ -101,8 +117,8 @@ public class BarChartView extends View {
     }
 
     private void drawBars(Canvas canvas) {
-        for (int i = 0; i < DAYS.length; i++) {
-            float barHeight = (chartBottom - chartTop) * VALUES[i] / MAX_VALUE;
+        for (int i = 0; i < values.length; i++) {
+            float barHeight = (chartBottom - chartTop) * values[i] / maxValue;
             float left = chartLeft + i * barSpacing + (barSpacing - barWidth) / 2f;
             float top = chartBottom - barHeight;
             float right = left + barWidth;
@@ -112,14 +128,14 @@ public class BarChartView extends View {
             float radius = dpToPx(4);
             canvas.drawRoundRect(rect, radius, radius, barPaint);
 
-            canvas.drawText(String.valueOf(VALUES[i]), left + barWidth / 2f, top - dpToPx(4), valuePaint);
+            canvas.drawText(String.valueOf(values[i]), left + barWidth / 2f, top - dpToPx(4), valuePaint);
         }
     }
 
     private void drawLabels(Canvas canvas) {
-        for (int i = 0; i < DAYS.length; i++) {
+        for (int i = 0; i < dayLabels.length; i++) {
             float x = chartLeft + i * barSpacing + barSpacing / 2f;
-            canvas.drawText(DAYS[i], x, chartBottom + dpToPx(18), labelPaint);
+            canvas.drawText(dayLabels[i], x, chartBottom + dpToPx(18), labelPaint);
         }
     }
 

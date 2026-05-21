@@ -21,6 +21,8 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 
+import androidx.appcompat.app.AppCompatDelegate;
+
 /**
  * Pantalla de Ajustes con preferencias locales y diálogos informativos.
  */
@@ -38,6 +40,7 @@ public class AjustesFragment extends Fragment {
     private MaterialCardView cardSoporte;
 
     private LinearLayout rowEditarPerfil;
+    private LinearLayout rowCambiarContrasena;
     private LinearLayout rowNotificaciones;
     private LinearLayout rowPrivacidad;
     private LinearLayout rowAyuda;
@@ -63,7 +66,6 @@ public class AjustesFragment extends Fragment {
         bindViews(view);
         loadSavedState();
         setupListeners();
-        applyLocalTheme(preferenceManager.isDarkThemeEnabled(), false);
     }
 
     private void bindViews(@NonNull View view) {
@@ -77,6 +79,7 @@ public class AjustesFragment extends Fragment {
         cardSoporte = view.findViewById(R.id.card_soporte);
 
         rowEditarPerfil = view.findViewById(R.id.row_editar_perfil);
+        rowCambiarContrasena = view.findViewById(R.id.row_cambiar_contrasena);
         rowNotificaciones = view.findViewById(R.id.row_notificaciones);
         rowPrivacidad = view.findViewById(R.id.row_privacidad);
         rowAyuda = view.findViewById(R.id.row_ayuda);
@@ -90,7 +93,7 @@ public class AjustesFragment extends Fragment {
     private void loadSavedState() {
         String userName = preferenceManager.getUserName();
         updateProfileUi(userName);
-        tvCorreoUsuario.setText(preferenceManager.getDefaultEmail());
+        tvCorreoUsuario.setText(preferenceManager.getUserEmail());
 
         setSwitchCheckedSilently(switchNotificaciones, preferenceManager.isNotificationsEnabled());
         setSwitchCheckedSilently(switchTemaOscuro, preferenceManager.isDarkThemeEnabled());
@@ -98,6 +101,7 @@ public class AjustesFragment extends Fragment {
 
     private void setupListeners() {
         rowEditarPerfil.setOnClickListener(v -> showEditProfileDialog());
+        rowCambiarContrasena.setOnClickListener(v -> showChangePasswordDialog());
 
         switchNotificaciones.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (suppressSwitchCallbacks) {
@@ -115,7 +119,8 @@ public class AjustesFragment extends Fragment {
                 return;
             }
             preferenceManager.setDarkThemeEnabled(isChecked);
-            applyLocalTheme(isChecked, true);
+            AppCompatDelegate.setDefaultNightMode(isChecked ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
+            requireActivity().recreate();
         });
 
         rowPrivacidad.setOnClickListener(v ->
@@ -149,12 +154,29 @@ public class AjustesFragment extends Fragment {
         SettingsDialogHelper.showEditProfileDialog(
                 requireContext(),
                 preferenceManager.getUserName(),
-                newName -> {
+                preferenceManager.getUserEmail(),
+                (newName, newEmail) -> {
                     preferenceManager.setUserName(newName);
+                    preferenceManager.setUserEmail(newEmail);
                     updateProfileUi(newName);
+                    tvCorreoUsuario.setText(newEmail);
                     Toast.makeText(
                             requireContext(),
                             R.string.settings_profile_updated,
+                            Toast.LENGTH_SHORT
+                    ).show();
+                }
+        );
+    }
+
+    private void showChangePasswordDialog() {
+        SettingsDialogHelper.showChangePasswordDialog(
+                requireContext(),
+                newPassword -> {
+                    preferenceManager.setUserPassword(newPassword);
+                    Toast.makeText(
+                            requireContext(),
+                            R.string.settings_password_updated,
                             Toast.LENGTH_SHORT
                     ).show();
                 }
@@ -189,6 +211,7 @@ public class AjustesFragment extends Fragment {
                 cardPreferencias,
                 cardSoporte,
                 rowEditarPerfil,
+                rowCambiarContrasena,
                 rowNotificaciones,
                 rowPrivacidad,
                 rowAyuda,

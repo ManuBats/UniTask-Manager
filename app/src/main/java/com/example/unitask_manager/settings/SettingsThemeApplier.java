@@ -29,6 +29,7 @@ public final class SettingsThemeApplier {
             @NonNull MaterialCardView cardPreferencias,
             @NonNull MaterialCardView cardSoporte,
             @NonNull LinearLayout rowEditarPerfil,
+            @NonNull LinearLayout rowCambiarContrasena,
             @NonNull LinearLayout rowNotificaciones,
             @NonNull LinearLayout rowPrivacidad,
             @NonNull LinearLayout rowAyuda,
@@ -65,6 +66,7 @@ public final class SettingsThemeApplier {
         cardSoporte.setCardBackgroundColor(cardColor);
 
         applyRowTheme(context, rowEditarPerfil, textPrimary, textSecondary, darkTheme);
+        applyRowTheme(context, rowCambiarContrasena, textPrimary, textSecondary, darkTheme);
         applyRowTheme(context, rowNotificaciones, textPrimary, textSecondary, darkTheme);
         applyRowTheme(context, rowPrivacidad, textPrimary, textSecondary, darkTheme);
         applyRowTheme(context, rowAyuda, textPrimary, textSecondary, darkTheme);

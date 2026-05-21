@@ -21,9 +21,16 @@ import java.util.List;
 public class ActividadesAdapter extends RecyclerView.Adapter<ActividadesAdapter.ViewHolder> {
 
     private List<Actividad> actividades;
+    private OnItemClickListener itemClickListener;
+    private OnCheckedListener checkedListener;
 
     public ActividadesAdapter(List<Actividad> actividades, OnItemClickListener listener) {
         this.actividades = actividades;
+        this.itemClickListener = listener;
+    }
+
+    public void setOnCheckedListener(OnCheckedListener listener) {
+        this.checkedListener = listener;
     }
 
     @NonNull
@@ -37,7 +44,7 @@ public class ActividadesAdapter extends RecyclerView.Adapter<ActividadesAdapter.
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Actividad actividad = actividades.get(position);
-        holder.bind(actividad);
+        holder.bind(actividad, checkedListener, itemClickListener);
     }
 
     @Override
@@ -54,6 +61,10 @@ public class ActividadesAdapter extends RecyclerView.Adapter<ActividadesAdapter.
         void onItemClick(Actividad actividad);
     }
 
+    public interface OnCheckedListener {
+        void onCheckedChanged(Actividad actividad, boolean isChecked);
+    }
+
     static class ViewHolder extends RecyclerView.ViewHolder {
 
         private CardView cardRoot;
@@ -62,6 +73,7 @@ public class ActividadesAdapter extends RecyclerView.Adapter<ActividadesAdapter.
         private ImageView ivIcono;
         private TextView tvTitulo;
         private TextView tvFecha;
+        private ImageView ivCheck;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -71,14 +83,14 @@ public class ActividadesAdapter extends RecyclerView.Adapter<ActividadesAdapter.
             ivIcono = itemView.findViewById(R.id.iv_actividad_icono);
             tvTitulo = itemView.findViewById(R.id.tv_actividad_titulo);
             tvFecha = itemView.findViewById(R.id.tv_actividad_fecha);
+            ivCheck = itemView.findViewById(R.id.iv_actividad_check);
         }
 
-        void bind(Actividad actividad) {
+        void bind(Actividad actividad, OnCheckedListener checkListener, OnItemClickListener clickListener) {
             int priority = actividad.getPrioridad();
 
             int priorityColor = getPriorityColor(priority);
             int priorityBgColor = getPriorityBgColor(priority);
-            int priorityIconBg = getPriorityIconBg(priority);
             int typeIconBg = getTypeIconBg(actividad.getTipo());
 
             viewPriorityBar.setBackgroundColor(
@@ -101,6 +113,30 @@ public class ActividadesAdapter extends RecyclerView.Adapter<ActividadesAdapter.
             }
 
             ivIcono.setImageResource(actividad.getIconoResId());
+
+            if (checkListener != null) {
+                ivCheck.setVisibility(View.VISIBLE);
+                boolean completada = actividad.isCompletada();
+                if (completada) {
+                    ivCheck.setImageResource(R.drawable.ic_check);
+                    ivCheck.setColorFilter(ContextCompat.getColor(itemView.getContext(), R.color.summary_completed));
+                    cardRoot.setAlpha(0.7f);
+                } else {
+                    ivCheck.setImageResource(R.drawable.bg_circle_priority);
+                    ivCheck.setColorFilter(null);
+                    cardRoot.setAlpha(1f);
+                }
+                ivCheck.setOnClickListener(v -> checkListener.onCheckedChanged(actividad, !completada));
+            } else {
+                ivCheck.setVisibility(View.GONE);
+                cardRoot.setAlpha(1f);
+            }
+
+            cardRoot.setOnClickListener(v -> {
+                if (clickListener != null) {
+                    clickListener.onItemClick(actividad);
+                }
+            });
         }
 
         private int getPriorityColor(int priority) {
@@ -116,14 +152,6 @@ public class ActividadesAdapter extends RecyclerView.Adapter<ActividadesAdapter.
                 case Actividad.PRIORIDAD_ALTA: return R.color.priority_high_bg;
                 case Actividad.PRIORIDAD_MEDIA: return R.color.priority_medium_bg;
                 default: return R.color.priority_low_bg;
-            }
-        }
-
-        private int getPriorityIconBg(int priority) {
-            switch (priority) {
-                case Actividad.PRIORIDAD_ALTA: return R.color.priority_high_icon_bg;
-                case Actividad.PRIORIDAD_MEDIA: return R.color.priority_medium_icon_bg;
-                default: return R.color.priority_low_icon_bg;
             }
         }
 

@@ -29,13 +29,13 @@
     <color name="priority_high">#FFDC2626</color>
     <color name="priority_medium_bg">#FFFFFBEB</color>
     <color name="priority_medium">#FFD97706</color>
-    <color name="priority_low_bg">#FFEDE9FE</color>
-    <color name="priority_low">#FF7C3AED</color>
+    <color name="priority_low_bg">#FFECFDF5</color>
+    <color name="priority_low">#FF10B981</color>
 
     <!-- Priority icon backgrounds -->
     <color name="priority_high_icon_bg">#FFFEE2E2</color>
     <color name="priority_medium_icon_bg">#FFFEF3C7</color>
-    <color name="priority_low_icon_bg">#FFEDE9FE</color>
+    <color name="priority_low_icon_bg">#FFECFDF5</color>
 
     <!-- Activity card type colors -->
     <color name="card_type_exam_bg">#FFEDE9FE</color>

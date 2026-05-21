@@ -21,22 +21,25 @@ import com.example.unitask_manager.models.Actividad;
 import com.example.unitask_manager.models.Curso;
 import com.example.unitask_manager.utils.Constants;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 public class AddTaskFragment extends Fragment {
 
     private EditText etTitulo, etDescripcion;
     private Spinner spinnerTipo, spinnerCurso;
-    private TextView tvFecha, tvHora;
+    private TextView tvFecha, tvHora, tvTituloHeader;
     private View btnPrioridadAlta, btnPrioridadMedia, btnPrioridadBaja;
-    private View btnGuardar;
+    private View btnGuardar, btnBack;
 
     private int prioridadSeleccionada = Actividad.PRIORIDAD_MEDIA;
     private String fechaSeleccionada = "";
     private String horaSeleccionada = "";
     private DatabaseHelper dbHelper;
     private List<Curso> listaCursos;
+    private Long editingActividadId = null;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -46,10 +49,17 @@ public class AddTaskFragment extends Fragment {
         configurarSpinners();
         configurarListeners();
         seleccionarPrioridad(btnPrioridadMedia);
+
+        if (getArguments() != null && getArguments().containsKey("actividad_id")) {
+            editingActividadId = getArguments().getLong("actividad_id");
+            cargarActividadExistente(editingActividadId);
+        }
+
         return view;
     }
 
     private void initViews(View view) {
+        tvTituloHeader = view.findViewById(R.id.tv_titulo_header);
         etTitulo = view.findViewById(R.id.et_titulo);
         etDescripcion = view.findViewById(R.id.et_descripcion);
         spinnerTipo = view.findViewById(R.id.spinner_tipo);
@@ -60,6 +70,65 @@ public class AddTaskFragment extends Fragment {
         btnPrioridadMedia = view.findViewById(R.id.btn_prioridad_media);
         btnPrioridadBaja = view.findViewById(R.id.btn_prioridad_baja);
         btnGuardar = view.findViewById(R.id.btn_guardar);
+        btnBack = view.findViewById(R.id.btn_back_add_task);
+    }
+
+    private void cargarActividadExistente(long actividadId) {
+        List<Actividad> todas = dbHelper.obtenerActividades();
+        Actividad actividad = null;
+        for (Actividad a : todas) {
+            if (a.getId() == actividadId) {
+                actividad = a;
+                break;
+            }
+        }
+        if (actividad == null) return;
+
+        tvTituloHeader.setText("Editar actividad");
+        ((TextView) btnGuardar).setText("Actualizar actividad");
+
+        etTitulo.setText(actividad.getTitulo());
+        etDescripcion.setText(actividad.getDescripcion());
+
+        String[] tipos = Constants.TIPOS_ACTIVIDAD;
+        for (int i = 0; i < tipos.length; i++) {
+            if (tipos[i].equalsIgnoreCase(actividad.getTipo())) {
+                spinnerTipo.setSelection(i);
+                break;
+            }
+        }
+
+        fechaSeleccionada = actividad.getFecha();
+        tvFecha.setText(fechaSeleccionada);
+        tvFecha.setTextColor(getResources().getColor(R.color.text_primary, null));
+
+        horaSeleccionada = actividad.getHora();
+        if (horaSeleccionada != null && !horaSeleccionada.isEmpty()) {
+            tvHora.setText(horaSeleccionada);
+            tvHora.setTextColor(getResources().getColor(R.color.text_primary, null));
+        }
+
+        prioridadSeleccionada = actividad.getPrioridad();
+        switch (prioridadSeleccionada) {
+            case Actividad.PRIORIDAD_ALTA:
+                seleccionarPrioridad(btnPrioridadAlta);
+                break;
+            case Actividad.PRIORIDAD_MEDIA:
+                seleccionarPrioridad(btnPrioridadMedia);
+                break;
+            case Actividad.PRIORIDAD_BAJA:
+                seleccionarPrioridad(btnPrioridadBaja);
+                break;
+        }
+
+        if (actividad.getIdCurso() != -1 && listaCursos != null) {
+            for (int i = 0; i < listaCursos.size(); i++) {
+                if (listaCursos.get(i).getId() == actividad.getIdCurso()) {
+                    spinnerCurso.setSelection(i);
+                    break;
+                }
+            }
+        }
     }
 
     private void configurarSpinners() {
@@ -82,6 +151,16 @@ public class AddTaskFragment extends Fragment {
         ArrayAdapter<String> cursoAdapter = new ArrayAdapter<>(getContext(),
                 android.R.layout.simple_spinner_dropdown_item, nombresCursos);
         spinnerCurso.setAdapter(cursoAdapter);
+
+        long cursoId = getArguments() != null ? getArguments().getLong("curso_id", -1) : -1;
+        if (cursoId != -1) {
+            for (int i = 0; i < listaCursos.size(); i++) {
+                if (listaCursos.get(i).getId() == cursoId) {
+                    spinnerCurso.setSelection(i);
+                    break;
+                }
+            }
+        }
     }
 
     private void configurarListeners() {
@@ -93,6 +172,7 @@ public class AddTaskFragment extends Fragment {
         btnPrioridadBaja.setOnClickListener(v -> seleccionarPrioridad(btnPrioridadBaja));
 
         btnGuardar.setOnClickListener(v -> guardarActividad());
+        btnBack.setOnClickListener(v -> requireActivity().getSupportFragmentManager().popBackStack());
     }
 
     private void seleccionarPrioridad(View seleccionado) {
@@ -113,11 +193,12 @@ public class AddTaskFragment extends Fragment {
 
     private void mostrarDatePicker() {
         Calendar cal = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("d MMMM yyyy", new Locale("es", "ES"));
         DatePickerDialog picker = new DatePickerDialog(getContext(),
                 (view, year, month, dayOfMonth) -> {
-                    String mes = (month + 1) < 10 ? "0" + (month + 1) : String.valueOf(month + 1);
-                    String dia = dayOfMonth < 10 ? "0" + dayOfMonth : String.valueOf(dayOfMonth);
-                    fechaSeleccionada = dia + "/" + mes + "/" + year;
+                    Calendar selected = Calendar.getInstance();
+                    selected.set(year, month, dayOfMonth);
+                    fechaSeleccionada = sdf.format(selected.getTime());
                     tvFecha.setText(fechaSeleccionada);
                     tvFecha.setTextColor(getResources().getColor(R.color.text_primary, null));
                 },
@@ -169,28 +250,24 @@ public class AddTaskFragment extends Fragment {
             }
         }
 
-        Actividad actividad = new Actividad(titulo, tipo, fechaSeleccionada, horaSeleccionada,
-                prioridadSeleccionada, descripcion, idCurso);
-
-        long resultado = dbHelper.insertarActividad(actividad);
-        if (resultado != -1) {
-            Toast.makeText(getContext(), "Actividad guardada exitosamente", Toast.LENGTH_SHORT).show();
-            limpiarFormulario();
+        if (editingActividadId != null) {
+            Actividad actividad = new Actividad(titulo, tipo, fechaSeleccionada, horaSeleccionada,
+                    prioridadSeleccionada, descripcion, idCurso);
+            actividad.setId(editingActividadId);
+            actividad.setCompletada(false);
+            dbHelper.actualizarActividad(actividad);
+            Toast.makeText(getContext(), "Actividad actualizada", Toast.LENGTH_SHORT).show();
+            requireActivity().getSupportFragmentManager().popBackStack();
         } else {
-            Toast.makeText(getContext(), "Error al guardar la actividad", Toast.LENGTH_SHORT).show();
+            Actividad actividad = new Actividad(titulo, tipo, fechaSeleccionada, horaSeleccionada,
+                    prioridadSeleccionada, descripcion, idCurso);
+            long resultado = dbHelper.insertarActividad(actividad);
+            if (resultado != -1) {
+                Toast.makeText(getContext(), "Actividad guardada", Toast.LENGTH_SHORT).show();
+                requireActivity().getSupportFragmentManager().popBackStack();
+            } else {
+                Toast.makeText(getContext(), "Error al guardar la actividad", Toast.LENGTH_SHORT).show();
+            }
         }
-    }
-
-    private void limpiarFormulario() {
-        etTitulo.setText("");
-        etDescripcion.setText("");
-        spinnerTipo.setSelection(0);
-        fechaSeleccionada = "";
-        horaSeleccionada = "";
-        tvFecha.setText("Seleccionar fecha");
-        tvFecha.setTextColor(getResources().getColor(R.color.text_secondary, null));
-        tvHora.setText("Seleccionar hora");
-        tvHora.setTextColor(getResources().getColor(R.color.text_secondary, null));
-        seleccionarPrioridad(btnPrioridadMedia);
     }
 }

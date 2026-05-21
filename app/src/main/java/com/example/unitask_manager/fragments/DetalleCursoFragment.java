@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.unitask_manager.R;
+import com.example.unitask_manager.activities.MainActivity;
 import com.example.unitask_manager.adapters.ActividadesAdapter;
 import com.example.unitask_manager.database.DatabaseHelper;
 import com.example.unitask_manager.models.Actividad;
@@ -36,15 +37,16 @@ public class DetalleCursoFragment extends Fragment {
 
     private TextView tvNombre, tvProfesor, tvPendientes;
     private TextView tvHorario, tvProgresoTexto, tvDescripcion;
+    private TextView tvNumPendientes, tvNumCompletadas;
     private ImageView ivIcono;
     private ProgressBar progressBar;
     private View viewColor;
     private View btnDelete, btnEdit, btnBack;
-    private RecyclerView rvActividades;
+    private RecyclerView rvPendientes, rvCompletadas;
     private FloatingActionButton fabAdd;
 
-    private List<Actividad> listaActividades;
-    private ActividadesAdapter adapter;
+    private List<Actividad> listaPendientes, listaCompletadas;
+    private ActividadesAdapter adapterPendientes, adapterCompletadas;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -52,7 +54,7 @@ public class DetalleCursoFragment extends Fragment {
         initViews(view);
         cargarInfoCurso();
         configurarRecycler();
-        cargarActividadesEjemplo();
+        cargarActividades();
         configurarListeners(view);
         return view;
     }
@@ -70,7 +72,10 @@ public class DetalleCursoFragment extends Fragment {
         btnDelete = view.findViewById(R.id.btn_delete_curso_detail);
         btnEdit = view.findViewById(R.id.btn_edit_curso_detail);
         btnBack = view.findViewById(R.id.btn_back_curso);
-        rvActividades = view.findViewById(R.id.rv_detalle_actividades);
+        rvPendientes = view.findViewById(R.id.rv_detalle_pendientes);
+        rvCompletadas = view.findViewById(R.id.rv_detalle_completadas);
+        tvNumPendientes = view.findViewById(R.id.tv_detalle_num_pendientes);
+        tvNumCompletadas = view.findViewById(R.id.tv_detalle_num_completadas);
         fabAdd = view.findViewById(R.id.fab_add_actividad);
     }
 
@@ -124,36 +129,84 @@ public class DetalleCursoFragment extends Fragment {
     }
 
     private void configurarRecycler() {
-        listaActividades = new ArrayList<>();
-        rvActividades.setLayoutManager(new LinearLayoutManager(getContext()));
-        rvActividades.setNestedScrollingEnabled(false);
-        adapter = new ActividadesAdapter(listaActividades, actividad ->
-                Toast.makeText(getContext(), actividad.getTitulo(), Toast.LENGTH_SHORT).show());
-        rvActividades.setAdapter(adapter);
+        listaPendientes = new ArrayList<>();
+        listaCompletadas = new ArrayList<>();
+
+        rvPendientes.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvPendientes.setNestedScrollingEnabled(false);
+        adapterPendientes = new ActividadesAdapter(listaPendientes, this::abrirEditarActividad);
+        adapterPendientes.setOnCheckedListener(this::toggleCompletada);
+        rvPendientes.setAdapter(adapterPendientes);
+
+        rvCompletadas.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvCompletadas.setNestedScrollingEnabled(false);
+        adapterCompletadas = new ActividadesAdapter(listaCompletadas, this::abrirEditarActividad);
+        adapterCompletadas.setOnCheckedListener(this::toggleCompletada);
+        rvCompletadas.setAdapter(adapterCompletadas);
     }
 
-    private void cargarActividadesEjemplo() {
+    private void abrirEditarActividad(Actividad actividad) {
+        AddTaskFragment fragment = new AddTaskFragment();
+        Bundle args = new Bundle();
+        args.putLong("actividad_id", actividad.getId());
+        fragment.setArguments(args);
+        ((MainActivity) requireActivity()).cargarFragmento(fragment, true);
+    }
+
+    private void cargarActividades() {
         long cursoId = getArguments() != null ? getArguments().getLong("curso_id", 0) : 0;
-        listaActividades.addAll(obtenerActividadesPorCurso(cursoId));
-        adapter.notifyDataSetChanged();
+        List<Actividad> todas = obtenerActividadesPorCurso(cursoId);
+        listaPendientes.clear();
+        listaCompletadas.clear();
+        for (Actividad a : todas) {
+            if (a.isCompletada()) {
+                listaCompletadas.add(a);
+            } else {
+                listaPendientes.add(a);
+            }
+        }
+        adapterPendientes.notifyDataSetChanged();
+        adapterCompletadas.notifyDataSetChanged();
+        actualizarProgreso();
+    }
+
+    private void toggleCompletada(Actividad actividad, boolean completada) {
+        DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
+        dbHelper.marcarCompletada(actividad.getId(), completada);
+        actividad.setCompletada(completada);
+
+        if (completada) {
+            listaPendientes.remove(actividad);
+            listaCompletadas.add(actividad);
+        } else {
+            listaCompletadas.remove(actividad);
+            listaPendientes.add(0, actividad);
+        }
+        adapterPendientes.notifyDataSetChanged();
+        adapterCompletadas.notifyDataSetChanged();
         actualizarProgreso();
     }
 
     private void actualizarProgreso() {
-        int total = listaActividades.size();
-        int completadas = 0;
-        for (Actividad a : listaActividades) {
-            if (a.isCompletada()) completadas++;
-        }
+        int total = listaPendientes.size() + listaCompletadas.size();
+        int completadas = listaCompletadas.size();
         int progreso = total > 0 ? (completadas * 100 / total) : 0;
         progressBar.setProgress(progreso);
         tvProgresoTexto.setText(progreso + "%");
         tvPendientes.setText((total - completadas) + " actividad" + ((total - completadas) != 1 ? "es" : "") + " pendiente" + ((total - completadas) != 1 ? "s" : ""));
+        tvNumPendientes.setText(String.valueOf(listaPendientes.size()));
+        tvNumCompletadas.setText(String.valueOf(listaCompletadas.size()));
     }
 
     private void configurarListeners(View view) {
-        fabAdd.setOnClickListener(v ->
-                Toast.makeText(getContext(), "Agregar actividad — Próximamente", Toast.LENGTH_SHORT).show());
+        fabAdd.setOnClickListener(v -> {
+            AddTaskFragment fragment = new AddTaskFragment();
+            Bundle args = new Bundle();
+            long cursoId = getArguments() != null ? getArguments().getLong("curso_id", 0) : 0;
+            args.putLong("curso_id", cursoId);
+            fragment.setArguments(args);
+            ((MainActivity) requireActivity()).cargarFragmento(fragment, true);
+        });
 
         btnBack.setOnClickListener(v ->
                 requireActivity().getSupportFragmentManager().popBackStack());
@@ -275,10 +328,6 @@ public class DetalleCursoFragment extends Fragment {
 
     private List<Actividad> obtenerActividadesPorCurso(long cursoId) {
         DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
-        List<Actividad> actividades = dbHelper.obtenerActividadesPorCursoId(cursoId);
-        if (actividades.isEmpty()) {
-            actividades.add(new Actividad("No hay actividades para este curso", "Tarea", "—", "", Actividad.PRIORIDAD_BAJA, "", cursoId));
-        }
-        return actividades;
+        return dbHelper.obtenerActividadesPorCursoId(cursoId);
     }
 }

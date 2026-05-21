@@ -39,7 +39,9 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical">
+                        android:layout_toLeftOf="@+id/tv_avatar_header"
+                        android:orientation="vertical"
+                        android:layout_marginEnd="52dp">
 
                         <TextView
                             android:id="@+id/tv_saludo"
@@ -60,16 +62,20 @@
                             android:alpha="0.9" />
                     </LinearLayout>
 
-                    <ImageView
-                        android:id="@+id/iv_notificaciones"
+                    <TextView
+                        android:id="@+id/tv_avatar_header"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
-                        android:background="@drawable/bg_circle"
-                        android:padding="8dp"
-                        android:src="@drawable/ic_notifications"
-                        android:contentDescription="Notificaciones" />
+                        android:background="@drawable/bg_avatar_settings"
+                        android:gravity="center"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/primary_purple"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground" />
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -95,13 +101,26 @@
                         android:contentDescription="Urgente" />
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:text=" Tareas urgentes"
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold"
                         android:layout_marginStart="6dp" />
+
+                    <TextView
+                        android:id="@+id/tv_ver_mas_urgentes"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ver más"
+                        android:textColor="@color/primary_purple"
+                        android:textSize="13sp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:visibility="gone"
+                        android:foreground="?attr/selectableItemBackground" />
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
@@ -135,13 +154,26 @@
                         app:tint="@color/primary_purple" />
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:text=" Próximas tareas"
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold"
                         android:layout_marginStart="6dp" />
+
+                    <TextView
+                        android:id="@+id/tv_ver_mas_proximas"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ver más"
+                        android:textColor="@color/primary_purple"
+                        android:textSize="13sp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:visibility="gone"
+                        android:foreground="?attr/selectableItemBackground" />
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
@@ -183,6 +215,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="6dp"
                         android:layout_weight="1"
+                        android:minHeight="140dp"
                         app:cardCornerRadius="16dp"
                         app:cardElevation="1dp"
                         app:cardBackgroundColor="@color/card_white"
@@ -196,6 +229,7 @@
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
                             android:gravity="center"
+                            android:layout_gravity="center"
                             android:padding="20dp">
 
                             <ImageView
@@ -221,6 +255,8 @@
                                 android:textColor="@color/text_secondary"
                                 android:textSize="13sp"
                                 android:layout_marginTop="4dp"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:gravity="center" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
@@ -232,6 +268,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
                         android:layout_weight="1"
+                        android:minHeight="140dp"
                         app:cardCornerRadius="16dp"
                         app:cardElevation="1dp"
                         app:cardBackgroundColor="@color/card_white"
@@ -245,6 +282,7 @@
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
                             android:gravity="center"
+                            android:layout_gravity="center"
                             android:padding="20dp">
 
                             <ImageView
@@ -270,6 +308,8 @@
                                 android:textColor="@color/text_secondary"
                                 android:textSize="13sp"
                                 android:layout_marginTop="4dp"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:gravity="center" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>

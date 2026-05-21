@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.GridLayout;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -20,14 +21,20 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.unitask_manager.R;
+import com.example.unitask_manager.activities.MainActivity;
 import com.example.unitask_manager.adapters.ActividadesAdapter;
+import com.example.unitask_manager.database.DatabaseHelper;
 import com.example.unitask_manager.models.Actividad;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class AgendaFragment extends Fragment {
 
@@ -47,10 +54,12 @@ public class AgendaFragment extends Fragment {
     private final SimpleDateFormat sdfDisplay = new SimpleDateFormat("EEEE, d 'de' MMMM 'de' yyyy", new Locale("es", "ES"));
 
     private int lastCellHeightPx;
+    private DatabaseHelper dbHelper;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_agenda, container, false);
+        dbHelper = new DatabaseHelper(requireContext());
         initViews(view);
         initState();
         setupListeners();
@@ -76,8 +85,23 @@ public class AgendaFragment extends Fragment {
         selectedDate.setTimeInMillis(now.getTimeInMillis());
 
         rvActividadesDia.setLayoutManager(new LinearLayoutManager(requireContext()));
-        adapter = new ActividadesAdapter(actividadesDia, null);
+        adapter = new ActividadesAdapter(actividadesDia, this::abrirEditarActividad);
+        adapter.setOnCheckedListener(this::toggleCompletada);
         rvActividadesDia.setAdapter(adapter);
+    }
+
+    private void toggleCompletada(Actividad actividad, boolean completada) {
+        dbHelper.marcarCompletada(actividad.getId(), completada);
+        updateActividadesDia();
+        updateCalendar();
+    }
+
+    private void abrirEditarActividad(Actividad actividad) {
+        AddTaskFragment fragment = new AddTaskFragment();
+        Bundle args = new Bundle();
+        args.putLong("actividad_id", actividad.getId());
+        fragment.setArguments(args);
+        ((MainActivity) requireActivity()).cargarFragmento(fragment, true);
     }
 
     private void setupListeners() {
@@ -129,6 +153,14 @@ public class AgendaFragment extends Fragment {
         Calendar today = Calendar.getInstance();
         String selectedDateStr = sdfFullDate.format(selectedDate.getTime());
 
+        Set<String> fechasConActividades = new HashSet<>();
+        for (Actividad a : dbHelper.obtenerActividades()) {
+            fechasConActividades.add(a.getFecha());
+        }
+
+        int dotSizePx = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5, getResources().getDisplayMetrics()));
+        int purpleColor = ContextCompat.getColor(requireContext(), R.color.primary_purple);
+
         for (int i = 0; i < firstDayColumn; i++) {
             TextView empty = new TextView(requireContext());
             GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
@@ -143,24 +175,27 @@ public class AgendaFragment extends Fragment {
             dayCal.set(currentYear, currentMonth, day);
             String dateStr = sdfFullDate.format(dayCal.getTime());
 
-            TextView dayCell = new TextView(requireContext());
+            boolean isToday = day == today.get(Calendar.DAY_OF_MONTH)
+                    && currentMonth == today.get(Calendar.MONTH)
+                    && currentYear == today.get(Calendar.YEAR);
+            boolean isSelected = dateStr.equals(selectedDateStr);
+            boolean hasActivity = fechasConActividades.contains(dateStr);
+
+            LinearLayout cellContainer = new LinearLayout(requireContext());
+            cellContainer.setOrientation(LinearLayout.VERTICAL);
+            cellContainer.setGravity(Gravity.CENTER);
             GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
             lp.width = 0;
             lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
             if (lastCellHeightPx > 0) {
                 lp.height = lastCellHeightPx;
             }
-            dayCell.setLayoutParams(lp);
-            dayCell.setGravity(Gravity.CENTER);
-            dayCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-            dayCell.setText(String.valueOf(day));
-            dayCell.setClickable(true);
-            dayCell.setFocusable(true);
+            cellContainer.setLayoutParams(lp);
 
-            boolean isToday = day == today.get(Calendar.DAY_OF_MONTH)
-                    && currentMonth == today.get(Calendar.MONTH)
-                    && currentYear == today.get(Calendar.YEAR);
-            boolean isSelected = dateStr.equals(selectedDateStr);
+            TextView dayCell = new TextView(requireContext());
+            dayCell.setText(String.valueOf(day));
+            dayCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+            dayCell.setGravity(Gravity.CENTER);
 
             if (isSelected) {
                 int bgColor = ContextCompat.getColor(requireContext(), R.color.calendar_selected_bg);
@@ -178,14 +213,28 @@ public class AgendaFragment extends Fragment {
                 dayCell.setTextColor(ContextCompat.getColor(requireContext(), R.color.calendar_today_text));
             }
 
+            cellContainer.addView(dayCell);
+
+            if (hasActivity && !isSelected) {
+                View dot = new View(requireContext());
+                LinearLayout.LayoutParams dotLp = new LinearLayout.LayoutParams(dotSizePx, dotSizePx);
+                dotLp.setMargins(0, Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, getResources().getDisplayMetrics())), 0, 0);
+                dot.setLayoutParams(dotLp);
+                GradientDrawable dotBg = new GradientDrawable();
+                dotBg.setShape(GradientDrawable.OVAL);
+                dotBg.setColor(purpleColor);
+                dot.setBackground(dotBg);
+                cellContainer.addView(dot);
+            }
+
             int selectedDay = day;
-            dayCell.setOnClickListener(v -> {
+            cellContainer.setOnClickListener(v -> {
                 selectedDate.set(currentYear, currentMonth, selectedDay);
                 updateCalendar();
                 updateActividadesDia();
             });
 
-            calendarGrid.addView(dayCell);
+            calendarGrid.addView(cellContainer);
         }
 
         equalizeCellHeights();
@@ -221,13 +270,9 @@ public class AgendaFragment extends Fragment {
         tvFechaSeleccionada.setText(displayDate);
 
         String selectedDateStr = sdfFullDate.format(selectedDate.getTime());
-        List<Actividad> todas = getActividadesHardcodeadas();
-        List<Actividad> delDia = new ArrayList<>();
-        for (Actividad a : todas) {
-            if (a.getFecha().equals(selectedDateStr)) {
-                delDia.add(a);
-            }
-        }
+        List<Actividad> delDia = dbHelper.obtenerActividadesPorFecha(selectedDateStr);
+
+        Collections.sort(delDia, (a, b) -> Integer.compare(b.getPrioridad(), a.getPrioridad()));
 
         actividadesDia.clear();
         actividadesDia.addAll(delDia);
@@ -236,76 +281,15 @@ public class AgendaFragment extends Fragment {
         tvSinActividades.setVisibility(actividadesDia.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
-    private List<Actividad> getActividadesHardcodeadas() {
-        List<Actividad> lista = new ArrayList<>();
-
-        Calendar cal = Calendar.getInstance();
-        int year = cal.get(Calendar.YEAR);
-        int month = cal.get(Calendar.MONTH);
-
-        CalendarioHelper helper = new CalendarioHelper(year, month);
-
-        lista.add(new Actividad("Estudiar Álgebra Lineal", "Examen",
-                helper.obtenerFecha(5), "10:00 AM",
-                Actividad.PRIORIDAD_ALTA, "Capítulos 3-5", 1));
-
-        lista.add(new Actividad("Entregar Proyecto Programación", "Tarea",
-                helper.obtenerFecha(5), "02:00 PM",
-                Actividad.PRIORIDAD_MEDIA, "App Android", 2));
-
-        lista.add(new Actividad("Preparar Exposición Historia", "Exposición",
-                helper.obtenerFecha(7), "04:30 PM",
-                Actividad.PRIORIDAD_BAJA, "Revolución Industrial", 3));
-
-        lista.add(new Actividad("Leer Capítulo 5 Física", "Tarea",
-                helper.obtenerFecha(5), "06:00 PM",
-                Actividad.PRIORIDAD_ALTA, "Movimiento ondulatorio", 2));
-
-        lista.add(new Actividad("Cuestionario Cálculo Diferencial", "Examen",
-                helper.obtenerFecha(12), "08:00 AM",
-                Actividad.PRIORIDAD_ALTA, "Derivadas parciales", 1));
-
-        lista.add(new Actividad("Resumen Química Orgánica", "Tarea",
-                helper.obtenerFecha(12), "11:30 AM",
-                Actividad.PRIORIDAD_MEDIA, "Hidrocarburos", 3));
-
-        lista.add(new Actividad("Exposición Literatura", "Exposición",
-                helper.obtenerFecha(15), "03:00 PM",
-                Actividad.PRIORIDAD_BAJA, "Realismo mágico", 2));
-
-        lista.add(new Actividad("Practicar ejercicios SQL", "Tarea",
-                helper.obtenerFecha(19), "09:00 AM",
-                Actividad.PRIORIDAD_MEDIA, "Consultas complejas", 1));
-
-        lista.add(new Actividad("Entregar Ensayo Filosofía", "Tarea",
-                helper.obtenerFecha(22), "11:59 PM",
-                Actividad.PRIORIDAD_ALTA, "Ética y moral", 3));
-
-        lista.add(new Actividad("Repasar Trigonometría", "Tarea",
-                helper.obtenerFecha(26), "05:00 PM",
-                Actividad.PRIORIDAD_BAJA, "Funciones trigonométricas", 1));
-
-        return lista;
-    }
-
-    private class CalendarioHelper {
-        private final int year;
-        private final int month;
-
-        CalendarioHelper(int year, int month) {
-            this.year = year;
-            this.month = month;
-        }
-
-        String obtenerFecha(int day) {
-            Calendar c = Calendar.getInstance();
-            c.set(year, month, day);
-            return sdfFullDate.format(c.getTime());
-        }
-    }
-
     private String capitalize(String text) {
         if (text == null || text.isEmpty()) return text;
         return text.substring(0, 1).toUpperCase() + text.substring(1);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateCalendar();
+        updateActividadesDia();
     }
 }

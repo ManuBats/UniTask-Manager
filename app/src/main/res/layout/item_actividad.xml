@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_actividad_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="1.5dp"
+    app:cardBackgroundColor="@color/card_white"
+    app:strokeWidth="0dp"
+    app:cardUseCompatPadding="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="0dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="6dp"
+        android:paddingBottom="14dp">
+
+        <!-- Priority Color Bar -->
+        <View
+            android:id="@+id/view_priority_bar"
+            android:layout_width="4dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="14dp"
+            android:layout_marginStart="0dp"
+            android:background="@color/priority_low"
+            android:layerType="software" />
+
+        <!-- Icon -->
+        <FrameLayout
+            android:id="@+id/icon_container"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:background="@drawable/bg_circle_priority"
+            android:layout_marginEnd="14dp">
+
+            <ImageView
+                android:id="@+id/iv_actividad_icono"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:contentDescription="Tipo"
+                android:importantForAccessibility="no" />
+        </FrameLayout>
+
+        <!-- Text Content -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginEnd="8dp">
+
+            <TextView
+                android:id="@+id/tv_actividad_titulo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:id="@+id/tv_actividad_fecha"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:layout_marginTop="3dp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif" />
+        </LinearLayout>
+
+        <!-- Check Button -->
+        <ImageView
+            android:id="@+id/iv_actividad_check"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="10dp"
+            android:padding="4dp"
+            android:contentDescription="Completar actividad"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

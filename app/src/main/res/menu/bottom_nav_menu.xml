@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_dashboard"
+        android:icon="@drawable/ic_dashboard"
+        android:title="Dashboard" />
+    <item
+        android:id="@+id/nav_cursos"
+        android:icon="@drawable/ic_curso"
+        android:title="Cursos" />
+    <item
+        android:id="@+id/nav_agenda"
+        android:icon="@drawable/ic_agenda"
+        android:title="Agenda" />
+    <item
+        android:id="@+id/nav_estadisticas"
+        android:icon="@drawable/ic_stats"
+        android:title="Estadísticas" />
+    <item
+        android:id="@+id/nav_ajustes"
+        android:icon="@drawable/ic_settings"
+        android:title="Ajustes" />
+</menu>

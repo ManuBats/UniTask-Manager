@@ -178,6 +178,34 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return count;
     }
 
+    public int contarCompletadasPorCurso(long cursoId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT COUNT(*) FROM " + TABLE_ACTIVIDADES
+                        + " WHERE " + COL_ACTIVIDAD_ID_CURSO + "=? AND " + COL_ACTIVIDAD_COMPLETADA + "=?",
+                new String[]{String.valueOf(cursoId), "1"});
+        int count = 0;
+        if (cursor != null && cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+            cursor.close();
+        }
+        return count;
+    }
+
+    public int contarActividadesPorCurso(long cursoId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT COUNT(*) FROM " + TABLE_ACTIVIDADES
+                        + " WHERE " + COL_ACTIVIDAD_ID_CURSO + "=?",
+                new String[]{String.valueOf(cursoId)});
+        int count = 0;
+        if (cursor != null && cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+            cursor.close();
+        }
+        return count;
+    }
+
     public List<Actividad> obtenerActividadesPorCursoId(long cursoId) {
         List<Actividad> lista = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -264,6 +292,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public int contarPendientes() {
         return contarActividades(false);
+    }
+
+    public int contarCompletadasPorFecha(String fecha) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT COUNT(*) FROM " + TABLE_ACTIVIDADES
+                        + " WHERE " + COL_ACTIVIDAD_COMPLETADA + "=1"
+                        + " AND " + COL_ACTIVIDAD_FECHA + "=?"
+                        + " AND " + actividadesValidas(),
+                new String[]{fecha});
+        int count = 0;
+        if (cursor != null && cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+            cursor.close();
+        }
+        return count;
     }
 
     private int contarActividades(boolean completadas) {

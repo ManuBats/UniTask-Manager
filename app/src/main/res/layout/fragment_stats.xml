@@ -141,19 +141,12 @@
                         android:textSize="17sp"
                         android:textStyle="bold" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Últimos 7 días"
-                        android:textColor="@color/text_tertiary"
-                        android:textSize="13sp"
-                        android:layout_marginTop="2dp" />
-
-                    <com.example.unitask_manager.views.BarChartView
-                        android:id="@+id/bar_chart"
+                    <com.example.unitask_manager.views.PieChartView
+                        android:id="@+id/pie_chart"
                         android:layout_width="match_parent"
-                        android:layout_height="180dp"
-                        android:layout_marginTop="8dp" />
+                        android:layout_height="200dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_gravity="center" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -204,12 +197,13 @@
 
                         <TextView
                             android:id="@+id/tv_top_curso_count"
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="5 actividades"
                             android:textColor="@color/text_tertiary"
                             android:textSize="13sp"
-                            android:layout_marginTop="4dp" />
+                            android:layout_marginTop="4dp"
+                            android:gravity="center" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 

@@ -11,21 +11,17 @@ import androidx.fragment.app.Fragment;
 
 import com.example.unitask_manager.R;
 import com.example.unitask_manager.database.DatabaseHelper;
-import com.example.unitask_manager.models.Actividad;
 import com.example.unitask_manager.models.Curso;
-import com.example.unitask_manager.views.BarChartView;
 import com.example.unitask_manager.views.CircularProgressView;
+import com.example.unitask_manager.views.PieChartView;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.List;
-import java.util.Locale;
 
 public class StatsFragment extends Fragment {
 
     private TextView tvProgressPercent, tvMotivacion, tvTopCurso, tvTopCursoCount, tvPendientesCount;
     private CircularProgressView circularProgress;
-    private BarChartView barChart;
+    private PieChartView pieChart;
     private DatabaseHelper dbHelper;
 
     @Override
@@ -40,7 +36,7 @@ public class StatsFragment extends Fragment {
         tvProgressPercent = view.findViewById(R.id.tv_progress_percent);
         tvMotivacion = view.findViewById(R.id.tv_motivacion);
         circularProgress = view.findViewById(R.id.circular_progress);
-        barChart = view.findViewById(R.id.bar_chart);
+        pieChart = view.findViewById(R.id.pie_chart);
         tvTopCurso = view.findViewById(R.id.tv_top_curso);
         tvTopCursoCount = view.findViewById(R.id.tv_top_curso_count);
         tvPendientesCount = view.findViewById(R.id.tv_pendientes_count);
@@ -69,33 +65,38 @@ public class StatsFragment extends Fragment {
 
         tvPendientesCount.setText(String.valueOf(pendientes));
 
-        cargarBarChart();
+        cargarPieChart();
         cargarTopCurso();
     }
 
-    private void cargarBarChart() {
-        SimpleDateFormat sdf = new SimpleDateFormat("d MMMM yyyy", new Locale("es", "ES"));
-        String[] labels = {"L", "M", "M", "J", "V", "S", "D"};
-        int[] values = new int[7];
-        String[] dayAbbr = {"D", "L", "M", "M", "J", "V", "S"};
+    private void cargarPieChart() {
+        List<Curso> cursos = dbHelper.obtenerCursos();
+        String[] nombres = new String[cursos.size()];
+        float[] porcentajes = new float[cursos.size()];
+        int[] colores = new int[cursos.size()];
 
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        List<Actividad> completadas = dbHelper.obtenerActividades();
-
-        for (int i = 0; i < 7; i++) {
-            String dateStr = sdf.format(cal.getTime());
-            int count = 0;
-            for (Actividad a : completadas) {
-                if (a.isCompletada() && a.getFecha().equals(dateStr)) {
-                    count++;
-                }
+        for (int i = 0; i < cursos.size(); i++) {
+            Curso c = cursos.get(i);
+            nombres[i] = c.getNombre();
+            colores[i] = parseColor(c.getColor());
+            int totalActividades = dbHelper.contarActividadesPorCurso(c.getId());
+            if (totalActividades > 0) {
+                int completadas = dbHelper.contarCompletadasPorCurso(c.getId());
+                porcentajes[i] = (float) completadas / totalActividades;
+            } else {
+                porcentajes[i] = 0f;
             }
-            values[i] = count;
-            cal.add(Calendar.DAY_OF_MONTH, 1);
         }
 
-        barChart.setData(values, labels);
+        pieChart.setData(nombres, porcentajes, colores);
+    }
+
+    private int parseColor(String colorStr) {
+        try {
+            return android.graphics.Color.parseColor(colorStr);
+        } catch (Exception e) {
+            return 0xFF7C3AED;
+        }
     }
 
     private void cargarTopCurso() {

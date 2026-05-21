@@ -47,6 +47,7 @@ public class BarChartView extends View {
         for (int v : this.values) {
             if (v > maxValue) maxValue = v;
         }
+        calcularEspaciado();
         invalidate();
     }
 
@@ -90,6 +91,10 @@ public class BarChartView extends View {
         chartTop = padTop;
         chartBottom = h - padBottom;
 
+        calcularEspaciado();
+    }
+
+    private void calcularEspaciado() {
         float totalWidth = chartRight - chartLeft;
         int count = Math.max(dayLabels.length, 1);
         barSpacing = totalWidth / count;

@@ -259,6 +259,10 @@ public class AddTaskFragment extends Fragment {
             Toast.makeText(getContext(), "Actividad actualizada", Toast.LENGTH_SHORT).show();
             requireActivity().getSupportFragmentManager().popBackStack();
         } else {
+            if (listaCursos == null || listaCursos.isEmpty()) {
+                Toast.makeText(getContext(), "Debes crear un curso primero en la pestaña Cursos", Toast.LENGTH_SHORT).show();
+                return;
+            }
             Actividad actividad = new Actividad(titulo, tipo, fechaSeleccionada, horaSeleccionada,
                     prioridadSeleccionada, descripcion, idCurso);
             long resultado = dbHelper.insertarActividad(actividad);

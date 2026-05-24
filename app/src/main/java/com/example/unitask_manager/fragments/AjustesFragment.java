@@ -1,5 +1,6 @@
 package com.example.unitask_manager.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +14,9 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.unitask_manager.R;
+import com.example.unitask_manager.activities.LoginActivity;
+import com.example.unitask_manager.data.local.TokenManager;
+import com.example.unitask_manager.data.repository.AuthRepository;
 import com.example.unitask_manager.settings.SettingsDialogHelper;
 import com.example.unitask_manager.settings.SettingsPreferenceManager;
 import com.example.unitask_manager.settings.SettingsThemeApplier;
@@ -193,13 +197,14 @@ public class AjustesFragment extends Fragment {
                 .setTitle(R.string.settings_logout_title)
                 .setMessage(R.string.settings_logout_message)
                 .setNegativeButton(R.string.settings_logout_cancel, null)
-                .setPositiveButton(R.string.settings_logout_confirm, (dialog, which) ->
-                        Toast.makeText(
-                                requireContext(),
-                                R.string.settings_logout_success,
-                                Toast.LENGTH_LONG
-                        ).show()
-                )
+                .setPositiveButton(R.string.settings_logout_confirm, (dialog, which) -> {
+                    TokenManager tokenManager = new TokenManager(requireContext());
+                    AuthRepository authRepo = new AuthRepository(requireContext(), tokenManager);
+                    authRepo.logout();
+                    Intent intent = new Intent(requireContext(), LoginActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    requireContext().startActivity(intent);
+                })
                 .show();
     }
 

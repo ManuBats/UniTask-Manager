@@ -23,6 +23,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.unitask_manager.R;
 import com.example.unitask_manager.activities.MainActivity;
 import com.example.unitask_manager.adapters.ActividadesAdapter;
+import com.example.unitask_manager.data.local.TokenManager;
+import com.example.unitask_manager.data.repository.CursoRepository;
 import com.example.unitask_manager.database.DatabaseHelper;
 import com.example.unitask_manager.models.Actividad;
 import com.example.unitask_manager.models.Curso;
@@ -47,11 +49,16 @@ public class DetalleCursoFragment extends Fragment {
 
     private List<Actividad> listaPendientes, listaCompletadas;
     private ActividadesAdapter adapterPendientes, adapterCompletadas;
+    private CursoRepository cursoRepository;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_detalle_curso, container, false);
         initViews(view);
+
+        TokenManager tokenManager = new TokenManager(requireContext());
+        cursoRepository = new CursoRepository(tokenManager);
+
         cargarInfoCurso();
         configurarRecycler();
         cargarActividades();
@@ -155,7 +162,9 @@ public class DetalleCursoFragment extends Fragment {
 
     private void cargarActividades() {
         long cursoId = getArguments() != null ? getArguments().getLong("curso_id", 0) : 0;
-        List<Actividad> todas = obtenerActividadesPorCurso(cursoId);
+        // Pendiente: migrar a API cuando el integrante 3 conecte ActividadRepository
+        DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
+        List<Actividad> todas = dbHelper.obtenerActividadesPorCursoId(cursoId);
         listaPendientes.clear();
         listaCompletadas.clear();
         for (Actividad a : todas) {
@@ -171,6 +180,7 @@ public class DetalleCursoFragment extends Fragment {
     }
 
     private void toggleCompletada(Actividad actividad, boolean completada) {
+        // Pendiente: migrar a API cuando el integrante 3 conecte ActividadRepository
         DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
         dbHelper.marcarCompletada(actividad.getId(), completada);
         actividad.setCompletada(completada);
@@ -220,10 +230,18 @@ public class DetalleCursoFragment extends Fragment {
                     .setMessage("¿Eliminar \"" + nombreCurso + "\" y sus actividades?")
                     .setPositiveButton("Eliminar", (dialog, which) -> {
                         long cursoId = getArguments() != null ? getArguments().getLong("curso_id", 0) : 0;
-                        DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
-                        dbHelper.eliminarCurso(cursoId);
-                        Toast.makeText(getContext(), "Curso eliminado", Toast.LENGTH_SHORT).show();
-                        requireActivity().getSupportFragmentManager().popBackStack();
+                        cursoRepository.deleteCurso(cursoId, new CursoRepository.VoidCallback() {
+                            @Override
+                            public void onDone() {
+                                Toast.makeText(getContext(), "Curso eliminado", Toast.LENGTH_SHORT).show();
+                                requireActivity().getSupportFragmentManager().popBackStack();
+                            }
+
+                            @Override
+                            public void onError(String error) {
+                                Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+                            }
+                        });
                     })
                     .setNegativeButton("Cancelar", null)
                     .show();
@@ -303,7 +321,6 @@ public class DetalleCursoFragment extends Fragment {
             String profesor = etProfesor.getText().toString().trim();
             String horario = etHorario.getText().toString().trim();
             String descripcion = etDescripcion.getText().toString().trim();
-            DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
 
             Curso curso = new Curso(
                     args.getLong("curso_id", 0),
@@ -313,20 +330,29 @@ public class DetalleCursoFragment extends Fragment {
             );
             curso.setHorario(horario);
             curso.setDescripcion(descripcion);
-            dbHelper.actualizarCurso(curso);
 
-            args.putString("curso_nombre", nombre);
-            args.putString("curso_profesor", profesor);
-            args.putString("curso_color", colorSeleccionado[0]);
-            args.putString("curso_horario", horario);
-            args.putString("curso_descripcion", descripcion);
-            cargarInfoCurso();
+            cursoRepository.updateCurso(curso, new CursoRepository.CursoCallback() {
+                @Override
+                public void onSuccess(Curso cursoActualizado) {
+                    args.putString("curso_nombre", nombre);
+                    args.putString("curso_profesor", profesor);
+                    args.putString("curso_color", colorSeleccionado[0]);
+                    args.putString("curso_horario", horario);
+                    args.putString("curso_descripcion", descripcion);
+                    cargarInfoCurso();
+                    dialog.dismiss();
+                }
 
-            dialog.dismiss();
+                @Override
+                public void onError(String error) {
+                    Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+                }
+            });
         });
     }
 
     private List<Actividad> obtenerActividadesPorCurso(long cursoId) {
+        // Pendiente: migrar a API cuando el integrante 3 conecte ActividadRepository
         DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
         return dbHelper.obtenerActividadesPorCursoId(cursoId);
     }

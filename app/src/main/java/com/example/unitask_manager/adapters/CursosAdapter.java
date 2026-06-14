@@ -87,6 +87,8 @@ public class CursosAdapter extends RecyclerView.Adapter<CursosAdapter.ViewHolder
                 tvProfesor.setVisibility(View.GONE);
             }
 
+            tvActividadesCount.setText(curso.getPendientes() + " pendiente" + (curso.getPendientes() != 1 ? "s" : ""));
+
             try {
                 viewColorBar.setBackgroundColor(Color.parseColor(curso.getColor()));
             } catch (Exception e) {

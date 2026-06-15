@@ -6,7 +6,6 @@ import com.example.unitask_manager.dto.request.RegisterRequest;
 import com.example.unitask_manager.dto.response.ActividadResponse;
 import com.example.unitask_manager.dto.response.AuthResponse;
 import com.example.unitask_manager.dto.response.CursoResponse;
-import com.example.unitask_manager.dto.response.StatsResponse;
 import com.example.unitask_manager.dto.response.UsuarioResponse;
 
 import java.util.List;
@@ -75,7 +74,4 @@ public interface ApiService {
     @DELETE("actividades/{id}")
     Call<Void> deleteActividad(@Path("id") long id);
 
-    // Stats
-    @GET("stats/dashboard")
-    Call<StatsResponse> getDashboardStats();
 }

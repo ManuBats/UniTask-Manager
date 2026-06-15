@@ -110,21 +110,12 @@ public class DetalleCursoFragment extends Fragment {
                 tvHorario.setVisibility(View.GONE);
             }
 
-            int progreso = args.getInt("curso_progreso", 0);
-            progressBar.setProgress(progreso);
-            tvProgresoTexto.setText(progreso + "%");
-
             String descripcion = args.getString("curso_descripcion", "");
             if (!descripcion.isEmpty()) {
                 tvDescripcion.setText(descripcion);
                 tvDescripcion.setVisibility(View.VISIBLE);
             } else {
                 tvDescripcion.setVisibility(View.GONE);
-            }
-
-            int iconResId = args.getInt("curso_icon", 0);
-            if (iconResId != 0) {
-                ivIcono.setImageResource(iconResId);
             }
 
             try {

@@ -22,6 +22,7 @@ import com.example.unitask_manager.settings.SettingsPreferenceManager;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -168,11 +169,14 @@ public class DashboardFragment extends Fragment {
                 pendientes++;
                 if (a.getPrioridad() == Actividad.PRIORIDAD_ALTA) {
                     todasUrgentes.add(a);
-                } else if (a.getPrioridad() == Actividad.PRIORIDAD_MEDIA) {
+                } else {
                     todasProximas.add(a);
                 }
             }
         }
+
+        Collections.sort(todasProximas, (a, b) ->
+                Integer.compare(b.getPrioridad(), a.getPrioridad()));
 
         tvCompletadas.setText(String.valueOf(completadas));
         tvPendientes.setText(String.valueOf(pendientes));

@@ -88,11 +88,6 @@ public class AuthRepository {
         settingsPrefs.setUserEmail(userResp.getEmail());
     }
 
-    private void saveUserPrefs(String nombre, String email) {
-        settingsPrefs.setUserName(nombre);
-        settingsPrefs.setUserEmail(email);
-    }
-
     public interface AuthCallback {
         void onSuccess(Usuario usuario);
         void onError(String error);

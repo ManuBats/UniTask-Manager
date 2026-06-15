@@ -13,6 +13,7 @@ import android.widget.GridLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -23,14 +24,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.unitask_manager.R;
 import com.example.unitask_manager.activities.MainActivity;
 import com.example.unitask_manager.adapters.ActividadesAdapter;
-import com.example.unitask_manager.database.DatabaseHelper;
+import com.example.unitask_manager.data.local.TokenManager;
+import com.example.unitask_manager.data.repository.ActividadRepository;
 import com.example.unitask_manager.models.Actividad;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -48,23 +49,24 @@ public class AgendaFragment extends Fragment {
 
     private ActividadesAdapter adapter;
     private final List<Actividad> actividadesDia = new ArrayList<>();
+    private final List<Actividad> allActividades = new ArrayList<>();
 
     private final SimpleDateFormat sdfMonthYear = new SimpleDateFormat("MMMM yyyy", new Locale("es", "ES"));
     private final SimpleDateFormat sdfFullDate = new SimpleDateFormat("d MMMM yyyy", new Locale("es", "ES"));
     private final SimpleDateFormat sdfDisplay = new SimpleDateFormat("EEEE, d 'de' MMMM 'de' yyyy", new Locale("es", "ES"));
 
     private int lastCellHeightPx;
-    private DatabaseHelper dbHelper;
+    private ActividadRepository actividadRepository;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_agenda, container, false);
-        dbHelper = new DatabaseHelper(requireContext());
+        TokenManager tokenManager = new TokenManager(requireContext());
+        actividadRepository = new ActividadRepository(tokenManager);
         initViews(view);
         initState();
         setupListeners();
-        updateCalendar();
-        updateActividadesDia();
+        cargarActividades();
         return view;
     }
 
@@ -90,16 +92,52 @@ public class AgendaFragment extends Fragment {
         rvActividadesDia.setAdapter(adapter);
     }
 
+    private void cargarActividades() {
+        actividadRepository.getActividades(new ActividadRepository.ActividadesCallback() {
+            @Override
+            public void onSuccess(List<Actividad> actividades) {
+                allActividades.clear();
+                allActividades.addAll(actividades);
+                updateCalendar();
+                updateActividadesDia();
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+                updateCalendar();
+                updateActividadesDia();
+            }
+        });
+    }
+
     private void toggleCompletada(Actividad actividad, boolean completada) {
-        dbHelper.marcarCompletada(actividad.getId(), completada);
-        updateActividadesDia();
-        updateCalendar();
+        actividadRepository.toggleCompletada(actividad, new ActividadRepository.ActividadCallback() {
+            @Override
+            public void onSuccess(Actividad actividad) {
+                updateActividadesDia();
+                updateCalendar();
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void abrirEditarActividad(Actividad actividad) {
         AddTaskFragment fragment = new AddTaskFragment();
         Bundle args = new Bundle();
         args.putLong("actividad_id", actividad.getId());
+        args.putString("actividad_titulo", actividad.getTitulo());
+        args.putString("actividad_tipo", actividad.getTipo());
+        args.putString("actividad_fecha", actividad.getFecha());
+        args.putString("actividad_hora", actividad.getHora());
+        args.putInt("actividad_prioridad", actividad.getPrioridad());
+        args.putString("actividad_descripcion", actividad.getDescripcion());
+        args.putLong("actividad_id_curso", actividad.getIdCurso());
+        args.putBoolean("actividad_completada", actividad.isCompletada());
         fragment.setArguments(args);
         ((MainActivity) requireActivity()).cargarFragmento(fragment, true);
     }
@@ -154,7 +192,7 @@ public class AgendaFragment extends Fragment {
         String selectedDateStr = sdfFullDate.format(selectedDate.getTime());
 
         Set<String> fechasConActividades = new HashSet<>();
-        for (Actividad a : dbHelper.obtenerActividades()) {
+        for (Actividad a : allActividades) {
             fechasConActividades.add(a.getFecha());
         }
 
@@ -270,7 +308,12 @@ public class AgendaFragment extends Fragment {
         tvFechaSeleccionada.setText(displayDate);
 
         String selectedDateStr = sdfFullDate.format(selectedDate.getTime());
-        List<Actividad> delDia = dbHelper.obtenerActividadesPorFecha(selectedDateStr);
+        List<Actividad> delDia = new ArrayList<>();
+        for (Actividad a : allActividades) {
+            if (a.getFecha().equals(selectedDateStr)) {
+                delDia.add(a);
+            }
+        }
 
         Collections.sort(delDia, (a, b) -> Integer.compare(b.getPrioridad(), a.getPrioridad()));
 
@@ -289,7 +332,6 @@ public class AgendaFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        updateCalendar();
-        updateActividadesDia();
+        cargarActividades();
     }
 }

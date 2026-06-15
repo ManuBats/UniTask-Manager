@@ -1,12 +1,12 @@
 package com.example.unitask_manager.data.repository;
 
 import com.example.unitask_manager.data.local.TokenManager;
-import com.example.unitask_manager.database.DatabaseHelper;
 import com.example.unitask_manager.dto.request.CreateActividadRequest;
 import com.example.unitask_manager.dto.response.ActividadResponse;
 import com.example.unitask_manager.models.Actividad;
 import com.example.unitask_manager.network.ApiClient;
 import com.example.unitask_manager.network.ApiService;
+import com.example.unitask_manager.utils.DateUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,55 +20,60 @@ import retrofit2.Response;
 public class ActividadRepository {
 
     private final ApiService apiService;
-    private final DatabaseHelper dbHelper;
 
-    public ActividadRepository(DatabaseHelper dbHelper, TokenManager tokenManager) {
+    public ActividadRepository(TokenManager tokenManager) {
         this.apiService = ApiClient.getApiService(tokenManager);
-        this.dbHelper = dbHelper;
+    }
+
+    public void getActividades(String fecha, Integer prioridad, Integer completada,
+                               Long idCurso, String fechaInicio, String fechaFin,
+                               String orderBy, Integer limit,
+                               final ActividadesCallback callback) {
+        String apiFecha = (fecha != null && !fecha.isEmpty()) ? DateUtils.toApi(fecha) : null;
+        String apiFechaInicio = (fechaInicio != null && !fechaInicio.isEmpty()) ? DateUtils.toApi(fechaInicio) : null;
+        String apiFechaFin = (fechaFin != null && !fechaFin.isEmpty()) ? DateUtils.toApi(fechaFin) : null;
+
+        apiService.getActividades(apiFecha, prioridad, completada, idCurso,
+                        apiFechaInicio, apiFechaFin, orderBy, limit)
+                .enqueue(new Callback<List<ActividadResponse>>() {
+                    @Override
+                    public void onResponse(Call<List<ActividadResponse>> call, Response<List<ActividadResponse>> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            callback.onSuccess(mapToModelList(response.body()));
+                        } else {
+                            callback.onError("Error al obtener actividades: " + response.code());
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<ActividadResponse>> call, Throwable t) {
+                        callback.onError("Error de conexi\u00f3n: " + t.getMessage());
+                    }
+                });
     }
 
     public void getActividades(final ActividadesCallback callback) {
-        apiService.getActividades(null, null, null, null, null, null, null, null)
-                .enqueue(new Callback<List<ActividadResponse>>() {
-            @Override
-            public void onResponse(Call<List<ActividadResponse>> call, Response<List<ActividadResponse>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    callback.onSuccess(mapToModelList(response.body()));
-                } else {
-                    fallbackToLocal(callback);
-                }
-            }
+        getActividades(null, null, null, null, null, null, null, null, callback);
+    }
 
-            @Override
-            public void onFailure(Call<List<ActividadResponse>> call, Throwable t) {
-                fallbackToLocal(callback);
-            }
-        });
+    public void getActividadesByFecha(String fechaDisplay, final ActividadesCallback callback) {
+        getActividades(fechaDisplay, null, null, null, null, null, null, null, callback);
     }
 
     public void getActividadesByCurso(long cursoId, final ActividadesCallback callback) {
-        apiService.getActividades(null, null, null, cursoId, null, null, null, null)
-                .enqueue(new Callback<List<ActividadResponse>>() {
-            @Override
-            public void onResponse(Call<List<ActividadResponse>> call, Response<List<ActividadResponse>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    callback.onSuccess(mapToModelList(response.body()));
-                } else {
-                    callback.onSuccess(dbHelper.obtenerActividadesPorCursoId(cursoId));
-                }
-            }
+        getActividades(null, null, null, cursoId, null, null, null, null, callback);
+    }
 
-            @Override
-            public void onFailure(Call<List<ActividadResponse>> call, Throwable t) {
-                callback.onSuccess(dbHelper.obtenerActividadesPorCursoId(cursoId));
-            }
-        });
+    public void getActividadesByRango(String fechaInicioDisplay, String fechaFinDisplay,
+                                      final ActividadesCallback callback) {
+        getActividades(null, null, null, null, fechaInicioDisplay, fechaFinDisplay, null, null, callback);
     }
 
     public void createActividad(Actividad actividad, final ActividadCallback callback) {
+        String apiFecha = DateUtils.toApi(actividad.getFecha());
         CreateActividadRequest request = new CreateActividadRequest(
                 actividad.getIdCurso(), actividad.getTitulo(), actividad.getTipo(),
-                actividad.getFecha(), actividad.getHora(), actividad.getPrioridad(),
+                apiFecha, actividad.getHora(), actividad.getPrioridad(),
                 actividad.getDescripcion());
 
         apiService.createActividad(request).enqueue(new Callback<ActividadResponse>() {
@@ -76,17 +81,15 @@ public class ActividadRepository {
             public void onResponse(Call<ActividadResponse> call, Response<ActividadResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     actividad.setId(response.body().getId());
+                    if (callback != null) callback.onSuccess(actividad);
+                } else {
+                    if (callback != null) callback.onError("Error al crear actividad: " + response.code());
                 }
-                long id = dbHelper.insertarActividad(actividad);
-                if (actividad.getId() <= 0) actividad.setId(id);
-                if (callback != null) callback.onSuccess(actividad);
             }
 
             @Override
             public void onFailure(Call<ActividadResponse> call, Throwable t) {
-                long id = dbHelper.insertarActividad(actividad);
-                actividad.setId(id);
-                if (callback != null) callback.onSuccess(actividad);
+                if (callback != null) callback.onError("Error de conexi\u00f3n: " + t.getMessage());
             }
         });
     }
@@ -95,31 +98,32 @@ public class ActividadRepository {
         Map<String, Object> body = new HashMap<>();
         body.put("titulo", actividad.getTitulo());
         body.put("tipo", actividad.getTipo());
-        body.put("fecha", actividad.getFecha());
+        body.put("fecha", DateUtils.toApi(actividad.getFecha()));
         body.put("hora", actividad.getHora());
         body.put("prioridad", actividad.getPrioridad());
         body.put("descripcion", actividad.getDescripcion());
         body.put("id_curso", actividad.getIdCurso() > 0 ? actividad.getIdCurso() : -1);
-        body.put("completada", actividad.isCompletada() ? 1 : 0);
+        body.put("completada", actividad.isCompletada());
 
         apiService.updateActividad(actividad.getId(), body).enqueue(new Callback<ActividadResponse>() {
             @Override
             public void onResponse(Call<ActividadResponse> call, Response<ActividadResponse> response) {
-                dbHelper.actualizarActividad(actividad);
-                if (callback != null) callback.onSuccess(actividad);
+                if (response.isSuccessful()) {
+                    if (callback != null) callback.onSuccess(actividad);
+                } else {
+                    if (callback != null) callback.onError("Error al actualizar actividad: " + response.code());
+                }
             }
 
             @Override
             public void onFailure(Call<ActividadResponse> call, Throwable t) {
-                dbHelper.actualizarActividad(actividad);
-                if (callback != null) callback.onSuccess(actividad);
+                if (callback != null) callback.onError("Error de conexi\u00f3n: " + t.getMessage());
             }
         });
     }
 
     public void toggleCompletada(Actividad actividad, final ActividadCallback callback) {
-        int nuevoEstado = actividad.isCompletada() ? 0 : 1;
-        actividad.setCompletada(nuevoEstado == 1);
+        boolean nuevoEstado = !actividad.isCompletada();
 
         Map<String, Object> body = new HashMap<>();
         body.put("completada", nuevoEstado);
@@ -127,14 +131,17 @@ public class ActividadRepository {
         apiService.updateActividad(actividad.getId(), body).enqueue(new Callback<ActividadResponse>() {
             @Override
             public void onResponse(Call<ActividadResponse> call, Response<ActividadResponse> response) {
-                dbHelper.marcarCompletada(actividad.getId(), actividad.isCompletada());
-                if (callback != null) callback.onSuccess(actividad);
+                if (response.isSuccessful()) {
+                    actividad.setCompletada(nuevoEstado);
+                    if (callback != null) callback.onSuccess(actividad);
+                } else {
+                    if (callback != null) callback.onError("Error al cambiar estado: " + response.code());
+                }
             }
 
             @Override
             public void onFailure(Call<ActividadResponse> call, Throwable t) {
-                dbHelper.marcarCompletada(actividad.getId(), actividad.isCompletada());
-                if (callback != null) callback.onSuccess(actividad);
+                if (callback != null) callback.onError("Error de conexi\u00f3n: " + t.getMessage());
             }
         });
     }
@@ -143,14 +150,16 @@ public class ActividadRepository {
         apiService.deleteActividad(id).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
-                dbHelper.eliminarActividad(id);
-                if (callback != null) callback.onDone();
+                if (response.isSuccessful()) {
+                    if (callback != null) callback.onDone();
+                } else {
+                    if (callback != null) callback.onError("Error al eliminar actividad: " + response.code());
+                }
             }
 
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                dbHelper.eliminarActividad(id);
-                if (callback != null) callback.onDone();
+                if (callback != null) callback.onError("Error de conexi\u00f3n: " + t.getMessage());
             }
         });
     }
@@ -163,7 +172,7 @@ public class ActividadRepository {
             a.setIdCurso(r.getIdCurso() != null ? r.getIdCurso() : -1);
             a.setTitulo(r.getTitulo());
             a.setTipo(r.getTipo());
-            a.setFecha(r.getFecha());
+            a.setFecha(DateUtils.toDisplay(r.getFecha()));
             a.setHora(r.getHora());
             a.setPrioridad(r.getPrioridad());
             a.setDescripcion(r.getDescripcion());
@@ -171,11 +180,6 @@ public class ActividadRepository {
             list.add(a);
         }
         return list;
-    }
-
-    private void fallbackToLocal(ActividadesCallback callback) {
-        List<Actividad> actividades = dbHelper.obtenerActividades();
-        callback.onSuccess(actividades);
     }
 
     public interface ActividadesCallback {

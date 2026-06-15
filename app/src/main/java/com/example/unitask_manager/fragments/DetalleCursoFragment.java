@@ -23,7 +23,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.unitask_manager.R;
 import com.example.unitask_manager.activities.MainActivity;
 import com.example.unitask_manager.adapters.ActividadesAdapter;
-import com.example.unitask_manager.database.DatabaseHelper;
+import com.example.unitask_manager.data.local.TokenManager;
+import com.example.unitask_manager.data.repository.ActividadRepository;
+import com.example.unitask_manager.data.repository.CursoRepository;
 import com.example.unitask_manager.models.Actividad;
 import com.example.unitask_manager.models.Curso;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -47,11 +49,18 @@ public class DetalleCursoFragment extends Fragment {
 
     private List<Actividad> listaPendientes, listaCompletadas;
     private ActividadesAdapter adapterPendientes, adapterCompletadas;
+    private CursoRepository cursoRepository;
+    private ActividadRepository actividadRepository;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_detalle_curso, container, false);
         initViews(view);
+
+        TokenManager tokenManager = new TokenManager(requireContext());
+        cursoRepository = new CursoRepository(tokenManager);
+        actividadRepository = new ActividadRepository(tokenManager);
+
         cargarInfoCurso();
         configurarRecycler();
         cargarActividades();
@@ -149,42 +158,65 @@ public class DetalleCursoFragment extends Fragment {
         AddTaskFragment fragment = new AddTaskFragment();
         Bundle args = new Bundle();
         args.putLong("actividad_id", actividad.getId());
+        args.putString("actividad_titulo", actividad.getTitulo());
+        args.putString("actividad_tipo", actividad.getTipo());
+        args.putString("actividad_fecha", actividad.getFecha());
+        args.putString("actividad_hora", actividad.getHora());
+        args.putInt("actividad_prioridad", actividad.getPrioridad());
+        args.putString("actividad_descripcion", actividad.getDescripcion());
+        args.putLong("actividad_id_curso", actividad.getIdCurso());
+        args.putBoolean("actividad_completada", actividad.isCompletada());
         fragment.setArguments(args);
         ((MainActivity) requireActivity()).cargarFragmento(fragment, true);
     }
 
     private void cargarActividades() {
         long cursoId = getArguments() != null ? getArguments().getLong("curso_id", 0) : 0;
-        List<Actividad> todas = obtenerActividadesPorCurso(cursoId);
-        listaPendientes.clear();
-        listaCompletadas.clear();
-        for (Actividad a : todas) {
-            if (a.isCompletada()) {
-                listaCompletadas.add(a);
-            } else {
-                listaPendientes.add(a);
+        actividadRepository.getActividadesByCurso(cursoId, new ActividadRepository.ActividadesCallback() {
+            @Override
+            public void onSuccess(List<Actividad> actividades) {
+                listaPendientes.clear();
+                listaCompletadas.clear();
+                for (Actividad a : actividades) {
+                    if (a.isCompletada()) {
+                        listaCompletadas.add(a);
+                    } else {
+                        listaPendientes.add(a);
+                    }
+                }
+                adapterPendientes.notifyDataSetChanged();
+                adapterCompletadas.notifyDataSetChanged();
+                actualizarProgreso();
             }
-        }
-        adapterPendientes.notifyDataSetChanged();
-        adapterCompletadas.notifyDataSetChanged();
-        actualizarProgreso();
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void toggleCompletada(Actividad actividad, boolean completada) {
-        DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
-        dbHelper.marcarCompletada(actividad.getId(), completada);
-        actividad.setCompletada(completada);
+        actividadRepository.toggleCompletada(actividad, new ActividadRepository.ActividadCallback() {
+            @Override
+            public void onSuccess(Actividad actividad) {
+                if (actividad.isCompletada()) {
+                    listaPendientes.remove(actividad);
+                    listaCompletadas.add(actividad);
+                } else {
+                    listaCompletadas.remove(actividad);
+                    listaPendientes.add(0, actividad);
+                }
+                adapterPendientes.notifyDataSetChanged();
+                adapterCompletadas.notifyDataSetChanged();
+                actualizarProgreso();
+            }
 
-        if (completada) {
-            listaPendientes.remove(actividad);
-            listaCompletadas.add(actividad);
-        } else {
-            listaCompletadas.remove(actividad);
-            listaPendientes.add(0, actividad);
-        }
-        adapterPendientes.notifyDataSetChanged();
-        adapterCompletadas.notifyDataSetChanged();
-        actualizarProgreso();
+            @Override
+            public void onError(String error) {
+                Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void actualizarProgreso() {
@@ -217,13 +249,21 @@ public class DetalleCursoFragment extends Fragment {
             String nombreCurso = getArguments() != null ? getArguments().getString("curso_nombre", "este curso") : "este curso";
             new MaterialAlertDialogBuilder(requireContext())
                     .setTitle("Eliminar curso")
-                    .setMessage("¿Eliminar \"" + nombreCurso + "\" y sus actividades?")
+                    .setMessage("\u00bfEliminar \"" + nombreCurso + "\" y sus actividades?")
                     .setPositiveButton("Eliminar", (dialog, which) -> {
                         long cursoId = getArguments() != null ? getArguments().getLong("curso_id", 0) : 0;
-                        DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
-                        dbHelper.eliminarCurso(cursoId);
-                        Toast.makeText(getContext(), "Curso eliminado", Toast.LENGTH_SHORT).show();
-                        requireActivity().getSupportFragmentManager().popBackStack();
+                        cursoRepository.deleteCurso(cursoId, new CursoRepository.VoidCallback() {
+                            @Override
+                            public void onDone() {
+                                Toast.makeText(getContext(), "Curso eliminado", Toast.LENGTH_SHORT).show();
+                                requireActivity().getSupportFragmentManager().popBackStack();
+                            }
+
+                            @Override
+                            public void onError(String error) {
+                                Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+                            }
+                        });
                     })
                     .setNegativeButton("Cancelar", null)
                     .show();
@@ -303,7 +343,6 @@ public class DetalleCursoFragment extends Fragment {
             String profesor = etProfesor.getText().toString().trim();
             String horario = etHorario.getText().toString().trim();
             String descripcion = etDescripcion.getText().toString().trim();
-            DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
 
             Curso curso = new Curso(
                     args.getLong("curso_id", 0),
@@ -313,21 +352,24 @@ public class DetalleCursoFragment extends Fragment {
             );
             curso.setHorario(horario);
             curso.setDescripcion(descripcion);
-            dbHelper.actualizarCurso(curso);
 
-            args.putString("curso_nombre", nombre);
-            args.putString("curso_profesor", profesor);
-            args.putString("curso_color", colorSeleccionado[0]);
-            args.putString("curso_horario", horario);
-            args.putString("curso_descripcion", descripcion);
-            cargarInfoCurso();
+            cursoRepository.updateCurso(curso, new CursoRepository.CursoCallback() {
+                @Override
+                public void onSuccess(Curso cursoActualizado) {
+                    args.putString("curso_nombre", nombre);
+                    args.putString("curso_profesor", profesor);
+                    args.putString("curso_color", colorSeleccionado[0]);
+                    args.putString("curso_horario", horario);
+                    args.putString("curso_descripcion", descripcion);
+                    cargarInfoCurso();
+                    dialog.dismiss();
+                }
 
-            dialog.dismiss();
+                @Override
+                public void onError(String error) {
+                    Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+                }
+            });
         });
-    }
-
-    private List<Actividad> obtenerActividadesPorCurso(long cursoId) {
-        DatabaseHelper dbHelper = new DatabaseHelper(requireContext());
-        return dbHelper.obtenerActividadesPorCursoId(cursoId);
     }
 }

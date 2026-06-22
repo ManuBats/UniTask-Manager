@@ -63,6 +63,9 @@
     <color name="fab_bg">#FF7C3AED</color>
     <color name="fab_icon">#FFFFFFFF</color>
 
+    <!-- Auth screens -->
+    <color name="bg_lilac">#FFE8E0F0</color>
+
     <!-- Divider -->
     <color name="divider">#FFE5E7EB</color>
 

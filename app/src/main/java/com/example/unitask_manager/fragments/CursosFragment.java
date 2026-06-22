@@ -21,7 +21,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.unitask_manager.R;
 import com.example.unitask_manager.activities.MainActivity;
 import com.example.unitask_manager.adapters.CursosAdapter;
-import com.example.unitask_manager.database.DatabaseHelper;
+import com.example.unitask_manager.data.local.TokenManager;
+import com.example.unitask_manager.data.repository.CursoRepository;
 import com.example.unitask_manager.models.Curso;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -37,7 +38,7 @@ public class CursosFragment extends Fragment {
 
     private CursosAdapter adapter;
     private final List<Curso> cursosList = new ArrayList<>();
-    private DatabaseHelper dbHelper;
+    private CursoRepository cursoRepository;
 
     private final String[] coloresDisponibles = {
             "#7C3AED", "#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#EC4899",
@@ -48,7 +49,10 @@ public class CursosFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_cursos, container, false);
         initViews(view);
-        dbHelper = new DatabaseHelper(requireContext());
+
+        TokenManager tokenManager = new TokenManager(requireContext());
+        cursoRepository = new CursoRepository(tokenManager);
+
         setupRecyclerView();
         setupListeners();
         cargarCursos();
@@ -89,10 +93,24 @@ public class CursosFragment extends Fragment {
     }
 
     private void cargarCursos() {
-        cursosList.clear();
-        cursosList.addAll(dbHelper.obtenerCursos());
-        adapter.notifyDataSetChanged();
+        cursoRepository.getCursos(new CursoRepository.CursosCallback() {
+            @Override
+            public void onSuccess(List<Curso> cursos) {
+                cursosList.clear();
+                cursosList.addAll(cursos);
+                adapter.notifyDataSetChanged();
+                actualizarVistas();
+            }
 
+            @Override
+            public void onError(String error) {
+                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+                actualizarVistas();
+            }
+        });
+    }
+
+    private void actualizarVistas() {
         tvNumCursos.setText(cursosList.size() + " curso" + (cursosList.size() != 1 ? "s" : ""));
         tvSinCursos.setVisibility(cursosList.isEmpty() ? View.VISIBLE : View.GONE);
         rvCursos.setVisibility(cursosList.isEmpty() ? View.GONE : View.VISIBLE);
@@ -185,16 +203,35 @@ public class CursosFragment extends Fragment {
                 cursoExistente.setColor(colorSeleccionado[0]);
                 cursoExistente.setHorario(horario);
                 cursoExistente.setDescripcion(descripcion);
-                dbHelper.actualizarCurso(cursoExistente);
+                cursoRepository.updateCurso(cursoExistente, new CursoRepository.CursoCallback() {
+                    @Override
+                    public void onSuccess(Curso curso) {
+                        dialog.dismiss();
+                        cargarCursos();
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+                    }
+                });
             } else {
                 Curso nuevo = new Curso(nombre, profesor, colorSeleccionado[0]);
                 nuevo.setHorario(horario);
                 nuevo.setDescripcion(descripcion);
-                dbHelper.insertarCurso(nuevo);
-            }
+                cursoRepository.createCurso(nuevo, new CursoRepository.CursoCallback() {
+                    @Override
+                    public void onSuccess(Curso curso) {
+                        dialog.dismiss();
+                        cargarCursos();
+                    }
 
-            dialog.dismiss();
-            cargarCursos();
+                    @Override
+                    public void onError(String error) {
+                        Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
         });
     }
 
@@ -206,9 +243,18 @@ public class CursosFragment extends Fragment {
                 .setMessage("¿Estás seguro de eliminar \"" + curso.getNombre() + "\"?\n" +
                         "Todas las actividades asociadas también se eliminarán.")
                 .setPositiveButton("Eliminar", (dialog, which) -> {
-                    dbHelper.eliminarCurso(curso.getId());
-                    cargarCursos();
-                    Toast.makeText(requireContext(), "Curso eliminado", Toast.LENGTH_SHORT).show();
+                    cursoRepository.deleteCurso(curso.getId(), new CursoRepository.VoidCallback() {
+                        @Override
+                        public void onDone() {
+                            cargarCursos();
+                            Toast.makeText(requireContext(), "Curso eliminado", Toast.LENGTH_SHORT).show();
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 })
                 .setNegativeButton("Cancelar", null)
                 .show();

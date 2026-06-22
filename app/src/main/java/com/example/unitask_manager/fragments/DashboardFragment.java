@@ -15,12 +15,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.unitask_manager.R;
 import com.example.unitask_manager.activities.MainActivity;
 import com.example.unitask_manager.adapters.ActividadesAdapter;
-import com.example.unitask_manager.database.DatabaseHelper;
+import com.example.unitask_manager.data.local.TokenManager;
+import com.example.unitask_manager.data.repository.ActividadRepository;
 import com.example.unitask_manager.models.Actividad;
 import com.example.unitask_manager.settings.SettingsPreferenceManager;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -43,12 +45,16 @@ public class DashboardFragment extends Fragment {
     private boolean urgentesExpandido = false;
     private boolean proximasExpandido = false;
 
-    private DatabaseHelper dbHelper;
+    private ActividadRepository actividadRepository;
+    private List<Actividad> allActividades = new ArrayList<>();
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_dashboard, container, false);
-        dbHelper = new DatabaseHelper(requireContext());
+
+        TokenManager tokenManager = new TokenManager(requireContext());
+        actividadRepository = new ActividadRepository(tokenManager);
+
         initViews(view);
         configurarRecyclers();
         cargarFecha();
@@ -88,14 +94,35 @@ public class DashboardFragment extends Fragment {
     }
 
     private void toggleCompletada(Actividad actividad, boolean completada) {
-        dbHelper.marcarCompletada(actividad.getId(), completada);
-        cargarActividades();
+        actividadRepository.toggleCompletada(actividad, new ActividadRepository.ActividadCallback() {
+            @Override
+            public void onSuccess(Actividad actividad) {
+                int idx = allActividades.indexOf(actividad);
+                if (idx != -1) {
+                    allActividades.set(idx, actividad);
+                }
+                filtrarYMostrar();
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void abrirEditarActividad(Actividad actividad) {
         AddTaskFragment fragment = new AddTaskFragment();
         Bundle args = new Bundle();
         args.putLong("actividad_id", actividad.getId());
+        args.putString("actividad_titulo", actividad.getTitulo());
+        args.putString("actividad_tipo", actividad.getTipo());
+        args.putString("actividad_fecha", actividad.getFecha());
+        args.putString("actividad_hora", actividad.getHora());
+        args.putInt("actividad_prioridad", actividad.getPrioridad());
+        args.putString("actividad_descripcion", actividad.getDescripcion());
+        args.putLong("actividad_id_curso", actividad.getIdCurso());
+        args.putBoolean("actividad_completada", actividad.isCompletada());
         fragment.setArguments(args);
         ((MainActivity) requireActivity()).cargarFragmento(fragment, true);
     }
@@ -110,21 +137,54 @@ public class DashboardFragment extends Fragment {
     private void cargarNombreUsuario() {
         SettingsPreferenceManager prefs = new SettingsPreferenceManager(requireContext());
         String nombre = prefs.getUserName();
-        tvSaludo.setText("¡Hola, " + nombre + "! 👋");
+        tvSaludo.setText("\u00a1Hola, " + nombre + "!");
         tvAvatarHeader.setText(SettingsPreferenceManager.computeInitials(nombre));
     }
 
     private void cargarActividades() {
-        todasUrgentes = dbHelper.obtenerActividadesPorPrioridad(Actividad.PRIORIDAD_ALTA, true);
-        todasProximas = dbHelper.obtenerActividadesPorPrioridad(Actividad.PRIORIDAD_MEDIA, true);
+        actividadRepository.getActividades(new ActividadRepository.ActividadesCallback() {
+            @Override
+            public void onSuccess(List<Actividad> actividades) {
+                allActividades = actividades;
+                filtrarYMostrar();
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void filtrarYMostrar() {
+        todasUrgentes = new ArrayList<>();
+        todasProximas = new ArrayList<>();
+        int completadas = 0;
+        int pendientes = 0;
+
+        for (Actividad a : allActividades) {
+            if (a.isCompletada()) {
+                completadas++;
+            } else {
+                pendientes++;
+                if (a.getPrioridad() == Actividad.PRIORIDAD_ALTA) {
+                    todasUrgentes.add(a);
+                } else {
+                    todasProximas.add(a);
+                }
+            }
+        }
+
+        Collections.sort(todasProximas, (a, b) ->
+                Integer.compare(b.getPrioridad(), a.getPrioridad()));
+
+        tvCompletadas.setText(String.valueOf(completadas));
+        tvPendientes.setText(String.valueOf(pendientes));
 
         urgentesExpandido = false;
         proximasExpandido = false;
         actualizarListaUrgentes();
         actualizarListaProximas();
-
-        tvCompletadas.setText(String.valueOf(dbHelper.contarCompletadas()));
-        tvPendientes.setText(String.valueOf(dbHelper.contarPendientes()));
     }
 
     private void actualizarListaUrgentes() {
@@ -137,7 +197,7 @@ public class DashboardFragment extends Fragment {
             for (int i = 0; i < limite; i++) {
                 urgentes.add(todasUrgentes.get(i));
             }
-            tvVerMasUrgentes.setText(todasUrgentes.size() > LIMITE_VISTA ? "Ver más" : "");
+            tvVerMasUrgentes.setText(todasUrgentes.size() > LIMITE_VISTA ? "Ver m\u00e1s" : "");
             tvVerMasUrgentes.setVisibility(todasUrgentes.size() > LIMITE_VISTA ? View.VISIBLE : View.GONE);
         }
         adapterUrgentes.notifyDataSetChanged();
@@ -153,7 +213,7 @@ public class DashboardFragment extends Fragment {
             for (int i = 0; i < limite; i++) {
                 proximas.add(todasProximas.get(i));
             }
-            tvVerMasProximas.setText(todasProximas.size() > LIMITE_VISTA ? "Ver más" : "");
+            tvVerMasProximas.setText(todasProximas.size() > LIMITE_VISTA ? "Ver m\u00e1s" : "");
             tvVerMasProximas.setVisibility(todasProximas.size() > LIMITE_VISTA ? View.VISIBLE : View.GONE);
         }
         adapterProximas.notifyDataSetChanged();

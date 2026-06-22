@@ -16,12 +16,15 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.example.unitask_manager.R;
-import com.example.unitask_manager.database.DatabaseHelper;
+import com.example.unitask_manager.data.local.TokenManager;
+import com.example.unitask_manager.data.repository.ActividadRepository;
+import com.example.unitask_manager.data.repository.CursoRepository;
 import com.example.unitask_manager.models.Actividad;
 import com.example.unitask_manager.models.Curso;
 import com.example.unitask_manager.utils.Constants;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
@@ -37,14 +40,20 @@ public class AddTaskFragment extends Fragment {
     private int prioridadSeleccionada = Actividad.PRIORIDAD_MEDIA;
     private String fechaSeleccionada = "";
     private String horaSeleccionada = "";
-    private DatabaseHelper dbHelper;
-    private List<Curso> listaCursos;
+    private List<Curso> listaCursos = new ArrayList<>();
     private Long editingActividadId = null;
+
+    private ActividadRepository actividadRepository;
+    private CursoRepository cursoRepository;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_add_task, container, false);
-        dbHelper = new DatabaseHelper(getContext());
+
+        TokenManager tokenManager = new TokenManager(getContext());
+        actividadRepository = new ActividadRepository(tokenManager);
+        cursoRepository = new CursoRepository(tokenManager);
+
         initViews(view);
         configurarSpinners();
         configurarListeners();
@@ -52,7 +61,7 @@ public class AddTaskFragment extends Fragment {
 
         if (getArguments() != null && getArguments().containsKey("actividad_id")) {
             editingActividadId = getArguments().getLong("actividad_id");
-            cargarActividadExistente(editingActividadId);
+            cargarActividadDesdeBundle();
         }
 
         return view;
@@ -73,42 +82,36 @@ public class AddTaskFragment extends Fragment {
         btnBack = view.findViewById(R.id.btn_back_add_task);
     }
 
-    private void cargarActividadExistente(long actividadId) {
-        List<Actividad> todas = dbHelper.obtenerActividades();
-        Actividad actividad = null;
-        for (Actividad a : todas) {
-            if (a.getId() == actividadId) {
-                actividad = a;
-                break;
-            }
-        }
-        if (actividad == null) return;
+    private void cargarActividadDesdeBundle() {
+        Bundle args = getArguments();
+        if (args == null) return;
 
         tvTituloHeader.setText("Editar actividad");
         ((TextView) btnGuardar).setText("Actualizar actividad");
 
-        etTitulo.setText(actividad.getTitulo());
-        etDescripcion.setText(actividad.getDescripcion());
+        etTitulo.setText(args.getString("actividad_titulo", ""));
+        etDescripcion.setText(args.getString("actividad_descripcion", ""));
 
+        String tipo = args.getString("actividad_tipo", "");
         String[] tipos = Constants.TIPOS_ACTIVIDAD;
         for (int i = 0; i < tipos.length; i++) {
-            if (tipos[i].equalsIgnoreCase(actividad.getTipo())) {
+            if (tipos[i].equalsIgnoreCase(tipo)) {
                 spinnerTipo.setSelection(i);
                 break;
             }
         }
 
-        fechaSeleccionada = actividad.getFecha();
+        fechaSeleccionada = args.getString("actividad_fecha", "");
         tvFecha.setText(fechaSeleccionada);
         tvFecha.setTextColor(getResources().getColor(R.color.text_primary, null));
 
-        horaSeleccionada = actividad.getHora();
+        horaSeleccionada = args.getString("actividad_hora", "");
         if (horaSeleccionada != null && !horaSeleccionada.isEmpty()) {
             tvHora.setText(horaSeleccionada);
             tvHora.setTextColor(getResources().getColor(R.color.text_primary, null));
         }
 
-        prioridadSeleccionada = actividad.getPrioridad();
+        prioridadSeleccionada = args.getInt("actividad_prioridad", Actividad.PRIORIDAD_MEDIA);
         switch (prioridadSeleccionada) {
             case Actividad.PRIORIDAD_ALTA:
                 seleccionarPrioridad(btnPrioridadAlta);
@@ -121,9 +124,10 @@ public class AddTaskFragment extends Fragment {
                 break;
         }
 
-        if (actividad.getIdCurso() != -1 && listaCursos != null) {
+        long idCurso = args.getLong("actividad_id_curso", -1);
+        if (idCurso != -1 && listaCursos != null) {
             for (int i = 0; i < listaCursos.size(); i++) {
-                if (listaCursos.get(i).getId() == actividad.getIdCurso()) {
+                if (listaCursos.get(i).getId() == idCurso) {
                     spinnerCurso.setSelection(i);
                     break;
                 }
@@ -140,27 +144,49 @@ public class AddTaskFragment extends Fragment {
     }
 
     private void cargarCursos() {
-        listaCursos = dbHelper.obtenerCursos();
-        String[] nombresCursos = new String[listaCursos.size()];
-        for (int i = 0; i < listaCursos.size(); i++) {
-            nombresCursos[i] = listaCursos.get(i).getNombre();
-        }
-        if (nombresCursos.length == 0) {
-            nombresCursos = new String[]{"Sin cursos — crea uno en la pestaña Cursos"};
-        }
-        ArrayAdapter<String> cursoAdapter = new ArrayAdapter<>(getContext(),
-                android.R.layout.simple_spinner_dropdown_item, nombresCursos);
-        spinnerCurso.setAdapter(cursoAdapter);
+        cursoRepository.getCursos(new CursoRepository.CursosCallback() {
+            @Override
+            public void onSuccess(List<Curso> cursos) {
+                listaCursos = cursos;
+                String[] nombresCursos = new String[listaCursos.size()];
+                for (int i = 0; i < listaCursos.size(); i++) {
+                    nombresCursos[i] = listaCursos.get(i).getNombre();
+                }
+                if (nombresCursos.length == 0) {
+                    nombresCursos = new String[]{"Sin cursos — crea uno en la pesta\u00f1a Cursos"};
+                }
+                ArrayAdapter<String> cursoAdapter = new ArrayAdapter<>(getContext(),
+                        android.R.layout.simple_spinner_dropdown_item, nombresCursos);
+                spinnerCurso.setAdapter(cursoAdapter);
 
-        long cursoId = getArguments() != null ? getArguments().getLong("curso_id", -1) : -1;
-        if (cursoId != -1) {
-            for (int i = 0; i < listaCursos.size(); i++) {
-                if (listaCursos.get(i).getId() == cursoId) {
-                    spinnerCurso.setSelection(i);
-                    break;
+                long cursoId = getArguments() != null ? getArguments().getLong("curso_id", -1) : -1;
+                if (cursoId != -1) {
+                    for (int i = 0; i < listaCursos.size(); i++) {
+                        if (listaCursos.get(i).getId() == cursoId) {
+                            spinnerCurso.setSelection(i);
+                            break;
+                        }
+                    }
+                }
+
+                if (editingActividadId != null) {
+                    long idCursoArg = getArguments() != null ? getArguments().getLong("actividad_id_curso", -1) : -1;
+                    if (idCursoArg != -1) {
+                        for (int i = 0; i < listaCursos.size(); i++) {
+                            if (listaCursos.get(i).getId() == idCursoArg) {
+                                spinnerCurso.setSelection(i);
+                                break;
+                            }
+                        }
+                    }
                 }
             }
-        }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void configurarListeners() {
@@ -251,27 +277,55 @@ public class AddTaskFragment extends Fragment {
         }
 
         if (editingActividadId != null) {
-            Actividad actividad = new Actividad(titulo, tipo, fechaSeleccionada, horaSeleccionada,
-                    prioridadSeleccionada, descripcion, idCurso);
-            actividad.setId(editingActividadId);
-            actividad.setCompletada(false);
-            dbHelper.actualizarActividad(actividad);
-            Toast.makeText(getContext(), "Actividad actualizada", Toast.LENGTH_SHORT).show();
-            requireActivity().getSupportFragmentManager().popBackStack();
+            actualizarActividad(titulo, tipo, descripcion, idCurso);
         } else {
-            if (listaCursos == null || listaCursos.isEmpty()) {
-                Toast.makeText(getContext(), "Debes crear un curso primero en la pestaña Cursos", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            Actividad actividad = new Actividad(titulo, tipo, fechaSeleccionada, horaSeleccionada,
-                    prioridadSeleccionada, descripcion, idCurso);
-            long resultado = dbHelper.insertarActividad(actividad);
-            if (resultado != -1) {
+            crearActividad(titulo, tipo, descripcion, idCurso);
+        }
+    }
+
+    private void crearActividad(String titulo, String tipo, String descripcion, long idCurso) {
+        if (listaCursos == null || listaCursos.isEmpty()) {
+            Toast.makeText(getContext(), "Debes crear un curso primero en la pesta\u00f1a Cursos", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Actividad actividad = new Actividad(titulo, tipo, fechaSeleccionada, horaSeleccionada,
+                prioridadSeleccionada, descripcion, idCurso);
+
+        actividadRepository.createActividad(actividad, new ActividadRepository.ActividadCallback() {
+            @Override
+            public void onSuccess(Actividad actividad) {
                 Toast.makeText(getContext(), "Actividad guardada", Toast.LENGTH_SHORT).show();
                 requireActivity().getSupportFragmentManager().popBackStack();
-            } else {
-                Toast.makeText(getContext(), "Error al guardar la actividad", Toast.LENGTH_SHORT).show();
             }
-        }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void actualizarActividad(String titulo, String tipo, String descripcion, long idCurso) {
+        Actividad actividad = new Actividad(titulo, tipo, fechaSeleccionada, horaSeleccionada,
+                prioridadSeleccionada, descripcion, idCurso);
+        actividad.setId(editingActividadId);
+
+        Bundle args = getArguments();
+        boolean completada = args != null && args.getBoolean("actividad_completada", false);
+        actividad.setCompletada(completada);
+
+        actividadRepository.updateActividad(actividad, new ActividadRepository.ActividadCallback() {
+            @Override
+            public void onSuccess(Actividad actividad) {
+                Toast.makeText(getContext(), "Actividad actualizada", Toast.LENGTH_SHORT).show();
+                requireActivity().getSupportFragmentManager().popBackStack();
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

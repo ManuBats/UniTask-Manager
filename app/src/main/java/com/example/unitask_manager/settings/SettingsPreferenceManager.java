@@ -72,14 +72,6 @@ public final class SettingsPreferenceManager {
         preferences.edit().putBoolean(KEY_DARK_THEME_ENABLED, enabled).apply();
     }
 
-    public void clearUserPrefs() {
-        preferences.edit()
-                .remove(KEY_USER_NAME)
-                .remove(KEY_USER_EMAIL)
-                .remove(KEY_USER_PASSWORD)
-                .apply();
-    }
-
     @NonNull
     public static String computeInitials(@NonNull String fullName) {
         String trimmed = fullName.trim();

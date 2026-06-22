@@ -17,7 +17,6 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class AuthRepository {
-    //"pingaa"
 
     private final ApiService apiService;
     private final TokenManager tokenManager;

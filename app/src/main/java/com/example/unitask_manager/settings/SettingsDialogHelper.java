@@ -80,18 +80,13 @@ public final class SettingsDialogHelper {
             @NonNull Context context,
             @NonNull OnPasswordChangedListener listener
     ) {
-        View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_edit_profile, null);
-        TextInputLayout tilPassword = dialogView.findViewById(R.id.til_nombre);
-        tilPassword.setHint(context.getString(R.string.settings_password_hint));
-        TextInputEditText etPassword = dialogView.findViewById(R.id.et_nombre);
-        etPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        etPassword.setText("");
-
-        TextInputLayout tilConfirm = dialogView.findViewById(R.id.til_email);
-        tilConfirm.setHint(context.getString(R.string.settings_confirm_password_hint));
-        TextInputEditText etConfirm = dialogView.findViewById(R.id.et_email);
-        etConfirm.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        etConfirm.setText("");
+        View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_change_password, null);
+        TextInputLayout tilActual = dialogView.findViewById(R.id.til_actual_password);
+        TextInputEditText etActual = dialogView.findViewById(R.id.et_actual_password);
+        TextInputLayout tilNew = dialogView.findViewById(R.id.til_new_password);
+        TextInputEditText etNew = dialogView.findViewById(R.id.et_new_password);
+        TextInputLayout tilConfirm = dialogView.findViewById(R.id.til_confirm_password);
+        TextInputEditText etConfirm = dialogView.findViewById(R.id.et_confirm_password);
 
         AlertDialog dialog = new MaterialAlertDialogBuilder(context)
                 .setTitle(R.string.settings_change_password_title)
@@ -103,23 +98,36 @@ public final class SettingsDialogHelper {
         dialog.setOnShowListener(d -> {
             MaterialButton saveButton = (MaterialButton) dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             saveButton.setOnClickListener(v -> {
-                String password = etPassword.getText() != null
-                        ? etPassword.getText().toString().trim()
+                String actualPassword = etActual.getText() != null
+                        ? etActual.getText().toString().trim()
                         : "";
-                String confirm = etConfirm.getText() != null
+                String newPassword = etNew.getText() != null
+                        ? etNew.getText().toString().trim()
+                        : "";
+                String confirmPassword = etConfirm.getText() != null
                         ? etConfirm.getText().toString().trim()
                         : "";
-                if (password.isEmpty()) {
-                    tilPassword.setError(context.getString(R.string.settings_password_empty));
+
+                if (actualPassword.isEmpty()) {
+                    tilActual.setError(context.getString(R.string.settings_current_password_empty));
                     return;
                 }
-                if (!password.equals(confirm)) {
+                if (newPassword.isEmpty()) {
+                    tilNew.setError(context.getString(R.string.settings_password_empty));
+                    return;
+                }
+                if (newPassword.length() < 6) {
+                    tilNew.setError("La contrase\u00f1a debe tener al menos 6 caracteres");
+                    return;
+                }
+                if (!newPassword.equals(confirmPassword)) {
                     tilConfirm.setError(context.getString(R.string.settings_password_mismatch));
                     return;
                 }
-                tilPassword.setError(null);
+                tilActual.setError(null);
+                tilNew.setError(null);
                 tilConfirm.setError(null);
-                listener.onPasswordChanged(password);
+                listener.onPasswordChanged(actualPassword, newPassword);
                 dialog.dismiss();
             });
         });
@@ -127,7 +135,7 @@ public final class SettingsDialogHelper {
     }
 
     public interface OnPasswordChangedListener {
-        void onPasswordChanged(@NonNull String newPassword);
+        void onPasswordChanged(@NonNull String currentPassword, @NonNull String newPassword);
     }
 
     public static void showMessageDialog(

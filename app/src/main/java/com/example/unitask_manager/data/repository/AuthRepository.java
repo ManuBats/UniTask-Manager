@@ -95,11 +95,11 @@ public class AuthRepository {
                 if (response.isSuccessful() && response.body() != null) {
                     UsuarioResponse updatedUser = response.body();
 
-                    // CORRECCIÓN: Convertimos el ID numérico a String usando String.valueOf()
                     Usuario usuarioModel = new Usuario(
-                            String.valueOf(updatedUser.getId()),
+                            updatedUser.getId(),
                             updatedUser.getNombre(),
-                            updatedUser.getEmail()
+                            updatedUser.getEmail(),
+                            ""
                     );
 
                     callback.onSuccess(usuarioModel);
@@ -117,8 +117,8 @@ public class AuthRepository {
 
     public void updatePassword(String passwordActual, String nuevaPassword, final ObjectCallback callback) {
         java.util.Map<String, String> body = new java.util.HashMap<>();
-        body.put("passwordActual", passwordActual);
-        body.put("nuevaPassword", nuevaPassword);
+        body.put("contrasenaActual", passwordActual);
+        body.put("contrasenaNueva", nuevaPassword);
 
         apiService.changePassword(body).enqueue(new Callback<Void>() {
             @Override

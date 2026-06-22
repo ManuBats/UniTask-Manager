@@ -47,8 +47,10 @@
 
     <!-- Cambiar contraseña -->
     <string name="settings_change_password_title">Cambiar contraseña</string>
-    <string name="settings_password_hint">Nueva contraseña</string>
+    <string name="settings_current_password_hint">Contraseña actual</string>
+    <string name="settings_new_password_hint">Nueva contraseña</string>
     <string name="settings_confirm_password_hint">Confirmar contraseña</string>
+    <string name="settings_current_password_empty">Escribe tu contraseña actual</string>
     <string name="settings_password_empty">Escribe una contraseña</string>
     <string name="settings_password_mismatch">Las contraseñas no coinciden</string>
     <string name="settings_password_updated">Contraseña actualizada</string>

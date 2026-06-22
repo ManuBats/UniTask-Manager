@@ -221,16 +221,14 @@ public class AjustesFragment extends Fragment {
     private void showChangePasswordDialog() {
         SettingsDialogHelper.showChangePasswordDialog(
                 requireContext(),
-                newPassword -> {
+                (currentPassword, newPassword) -> {
                     AuthRepository repo = getAuthRepository();
                     if (repo == null) {
                         Toast.makeText(requireContext(), "Error de inicialización interna", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    String passwordActualSimulada = newPassword;
-
-                    repo.updatePassword(passwordActualSimulada, newPassword, new AuthRepository.ObjectCallback() {
+                    repo.updatePassword(currentPassword, newPassword, new AuthRepository.ObjectCallback() {
                         @Override
                         public void onSuccess() {
                             if (preferenceManager != null) {

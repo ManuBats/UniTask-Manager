@@ -88,6 +88,62 @@ public class AuthRepository {
         settingsPrefs.setUserEmail(userResp.getEmail());
     }
 
+    public void updateUserProfile(UsuarioResponse usuario, final AuthCallback callback) {
+        apiService.updateUser(usuario).enqueue(new Callback<UsuarioResponse>() {
+            @Override
+            public void onResponse(Call<UsuarioResponse> call, Response<UsuarioResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    UsuarioResponse updatedUser = response.body();
+
+                    // CORRECCIÓN: Convertimos el ID numérico a String usando String.valueOf()
+                    Usuario usuarioModel = new Usuario(
+                            String.valueOf(updatedUser.getId()),
+                            updatedUser.getNombre(),
+                            updatedUser.getEmail()
+                    );
+
+                    callback.onSuccess(usuarioModel);
+                } else {
+                    callback.onError("Error al actualizar el perfil en el servidor");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<UsuarioResponse> call, Throwable t) {
+                callback.onError("Error de red: " + t.getMessage());
+            }
+        });
+    }
+
+    public void updatePassword(String passwordActual, String nuevaPassword, final ObjectCallback callback) {
+        java.util.Map<String, String> body = new java.util.HashMap<>();
+        body.put("passwordActual", passwordActual);
+        body.put("nuevaPassword", nuevaPassword);
+
+        apiService.changePassword(body).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    // CORRECCIÓN: Quitamos 'null' para cumplir con la firma del callback sin argumentos
+                    callback.onSuccess();
+                } else {
+                    callback.onError("La contraseña actual es incorrecta o no cumple con los requisitos");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError("Error de red: " + t.getMessage());
+            }
+        });
+    }
+
+    // Interfaz de retorno requerida para controlar el resultado de la contraseña
+    public interface ObjectCallback {
+        void onSuccess();
+        void onError(String error);
+    }
+
     public interface AuthCallback {
         void onSuccess(Usuario usuario);
         void onError(String error);

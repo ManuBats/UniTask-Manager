@@ -29,6 +29,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // 2. Control de Acceso (Auth Gate) - Redirección al Login si no hay token
         TokenManager tokenManager = new TokenManager(this);
         if (!tokenManager.hasToken()) {
             Intent intent = new Intent(this, LoginActivity.class);
@@ -38,15 +41,18 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        // 3. Configuración del tema (Oscuro / Claro)
         SharedPreferences prefs = getSharedPreferences("unitask_settings_prefs", MODE_PRIVATE);
         boolean darkTheme = prefs.getBoolean("dark_theme_enabled", false);
         AppCompatDelegate.setDefaultNightMode(darkTheme ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
 
-        super.onCreate(savedInstanceState);
+        // 4. Asignar la vista de la actividad
         setContentView(R.layout.activity_main);
 
+        // 5. Vincular el BottomNavigationView
         bottomNav = findViewById(R.id.bottom_navigation);
 
+        // 6. Controlar márgenes y áreas seguras de la pantalla (Edge-to-Edge)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
             int bottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
@@ -61,12 +67,12 @@ public class MainActivity extends AppCompatActivity {
             return WindowInsetsCompat.CONSUMED;
         });
 
-        bottomNav = findViewById(R.id.bottom_navigation);
-
+        // 7. Cargar el fragmento inicial si es la primera vez que se abre la actividad
         if (savedInstanceState == null) {
             cargarFragmento(new DashboardFragment(), false);
         }
 
+        // 8. Listener de navegación inferior
         bottomNav.setOnItemSelectedListener(item -> {
             Fragment fragmento = null;
             int id = item.getItemId();

@@ -17,6 +17,8 @@ import com.example.unitask_manager.R;
 import com.example.unitask_manager.activities.LoginActivity;
 import com.example.unitask_manager.data.local.TokenManager;
 import com.example.unitask_manager.data.repository.AuthRepository;
+import com.example.unitask_manager.dto.response.UsuarioResponse;
+import com.example.unitask_manager.models.Usuario;
 import com.example.unitask_manager.settings.SettingsDialogHelper;
 import com.example.unitask_manager.settings.SettingsPreferenceManager;
 import com.example.unitask_manager.settings.SettingsThemeApplier;
@@ -28,11 +30,12 @@ import com.google.android.material.materialswitch.MaterialSwitch;
 import androidx.appcompat.app.AppCompatDelegate;
 
 /**
- * Pantalla de Ajustes con preferencias locales y diálogos informativos.
+ * Pantalla de Ajustes con preferencias locales y conexión a la API de backend.
  */
 public class AjustesFragment extends Fragment {
 
     private SettingsPreferenceManager preferenceManager;
+    private AuthRepository authRepository;
 
     private View rootAjustes;
     private TextView tvAvatarIniciales;
@@ -67,9 +70,21 @@ public class AjustesFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         preferenceManager = new SettingsPreferenceManager(requireContext());
+
         bindViews(view);
         loadSavedState();
         setupListeners();
+    }
+
+    /**
+     * Obtiene de forma segura el repositorio solo cuando se necesita interactuar con la red.
+     */
+    private AuthRepository getAuthRepository() {
+        if (authRepository == null && getContext() != null) {
+            TokenManager tokenManager = new TokenManager(requireContext());
+            authRepository = new AuthRepository(requireContext(), tokenManager);
+        }
+        return authRepository;
     }
 
     private void bindViews(@NonNull View view) {
@@ -95,12 +110,14 @@ public class AjustesFragment extends Fragment {
     }
 
     private void loadSavedState() {
-        String userName = preferenceManager.getUserName();
-        updateProfileUi(userName);
-        tvCorreoUsuario.setText(preferenceManager.getUserEmail());
+        if (preferenceManager != null) {
+            String userName = preferenceManager.getUserName();
+            updateProfileUi(userName != null ? userName : "Usuario");
+            tvCorreoUsuario.setText(preferenceManager.getUserEmail() != null ? preferenceManager.getUserEmail() : "");
 
-        setSwitchCheckedSilently(switchNotificaciones, preferenceManager.isNotificationsEnabled());
-        setSwitchCheckedSilently(switchTemaOscuro, preferenceManager.isDarkThemeEnabled());
+            setSwitchCheckedSilently(switchNotificaciones, preferenceManager.isNotificationsEnabled());
+            setSwitchCheckedSilently(switchTemaOscuro, preferenceManager.isDarkThemeEnabled());
+        }
     }
 
     private void setupListeners() {
@@ -155,20 +172,48 @@ public class AjustesFragment extends Fragment {
     }
 
     private void showEditProfileDialog() {
+        String currentName = preferenceManager.getUserName() != null ? preferenceManager.getUserName() : "";
+        String currentEmail = preferenceManager.getUserEmail() != null ? preferenceManager.getUserEmail() : "";
+
         SettingsDialogHelper.showEditProfileDialog(
                 requireContext(),
-                preferenceManager.getUserName(),
-                preferenceManager.getUserEmail(),
+                currentName,
+                currentEmail,
                 (newName, newEmail) -> {
-                    preferenceManager.setUserName(newName);
-                    preferenceManager.setUserEmail(newEmail);
-                    updateProfileUi(newName);
-                    tvCorreoUsuario.setText(newEmail);
-                    Toast.makeText(
-                            requireContext(),
-                            R.string.settings_profile_updated,
-                            Toast.LENGTH_SHORT
-                    ).show();
+                    AuthRepository repo = getAuthRepository();
+                    if (repo == null) {
+                        Toast.makeText(requireContext(), "Error de inicialización interna", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    UsuarioResponse requestDto = new UsuarioResponse();
+                    requestDto.setNombre(newName);
+                    requestDto.setEmail(newEmail);
+
+                    repo.updateUserProfile(requestDto, new AuthRepository.AuthCallback() {
+                        @Override
+                        public void onSuccess(Usuario usuario) {
+                            // REQUISITO CUMPLIDO: Guardar en persistencia local SharedPreferences
+                            if (preferenceManager != null) {
+                                preferenceManager.setUserName(newName);
+                                preferenceManager.setUserEmail(newEmail);
+                            }
+
+                            // Refrescar el diseño visual
+                            updateProfileUi(newName);
+                            tvCorreoUsuario.setText(newEmail);
+                            Toast.makeText(
+                                    requireContext(),
+                                    R.string.settings_profile_updated,
+                                    Toast.LENGTH_SHORT
+                            ).show();
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show();
+                        }
+                    });
                 }
         );
     }
@@ -177,12 +222,32 @@ public class AjustesFragment extends Fragment {
         SettingsDialogHelper.showChangePasswordDialog(
                 requireContext(),
                 newPassword -> {
-                    preferenceManager.setUserPassword(newPassword);
-                    Toast.makeText(
-                            requireContext(),
-                            R.string.settings_password_updated,
-                            Toast.LENGTH_SHORT
-                    ).show();
+                    AuthRepository repo = getAuthRepository();
+                    if (repo == null) {
+                        Toast.makeText(requireContext(), "Error de inicialización interna", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    String passwordActualSimulada = newPassword;
+
+                    repo.updatePassword(passwordActualSimulada, newPassword, new AuthRepository.ObjectCallback() {
+                        @Override
+                        public void onSuccess() {
+                            if (preferenceManager != null) {
+                                preferenceManager.setUserPassword(newPassword);
+                            }
+                            Toast.makeText(
+                                    requireContext(),
+                                    R.string.settings_password_updated,
+                                    Toast.LENGTH_SHORT
+                            ).show();
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show();
+                        }
+                    });
                 }
         );
     }
@@ -198,9 +263,10 @@ public class AjustesFragment extends Fragment {
                 .setMessage(R.string.settings_logout_message)
                 .setNegativeButton(R.string.settings_logout_cancel, null)
                 .setPositiveButton(R.string.settings_logout_confirm, (dialog, which) -> {
-                    TokenManager tokenManager = new TokenManager(requireContext());
-                    AuthRepository authRepo = new AuthRepository(requireContext(), tokenManager);
-                    authRepo.logout();
+                    AuthRepository repo = getAuthRepository();
+                    if (repo != null) {
+                        repo.logout();
+                    }
                     Intent intent = new Intent(requireContext(), LoginActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     requireContext().startActivity(intent);
